@@ -1,6 +1,0 @@
-{
-    "rewrites": [
-        { "source": "/api1/:path*", "destination": "http://dono-01.danbot.host:9135/:path*" },
-        { "source": "/(.*)", "destination": "/index.html" }
-    ]
-}
