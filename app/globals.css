@@ -23,10 +23,27 @@
   -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
  }
 
-
 .back {
-  filter: drop-shadow(0 0 10.5em #e98c003f);
+  filter: drop-shadow(0 0 10.5em #e98c00ad);
 }
+
+.fade-effect {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 25%,
+    black 75%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 25%,
+    black 75%,
+    transparent 100%
+  );
+}
+
 
 @layer base {
   :root {
