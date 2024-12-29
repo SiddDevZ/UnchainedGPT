@@ -6,9 +6,10 @@ import Navbar from "../components/Navbar/Navbar";
 import ShinyText from "../components/ShinyText/ShinyText";
 import { BorderBeam } from "../components/ui/border-beam";
 import Particles from "../components/ui/particles";
-import { NeonGradientCard } from "../components/ui/neon-gradient-card";
+import Reviews from "../components/Reviews/Reviews";
 import Lottie from "lottie-react";
-import light from '../public/space.json'
+import light from "../public/car.json";
+import Questions from "../components/Questions/Questions";
 
 export function Home() {
   const { resolvedTheme } = useTheme();
@@ -52,12 +53,12 @@ export function Home() {
           </div>
 
           <div className="relative relativee back my-32 flex h-[500px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border-2 bg-background">
-            <img
+            {/* <img
               src="https://i.imgur.com/RXBEJz2.png"
               alt="Background"
               className="absolute inset-0 w-full h-full object-cover"
-            />
-            <BorderBeam size={250} duration={10} delay={9} />
+            /> */}
+            <BorderBeam size={250} colorFrom={"#e98c00ad"} colorTo={"#e90090ad"} duration={10} delay={9} />
           </div>
         </div>
         <div className="flex flex-col mt-[2rem]">
@@ -120,7 +121,9 @@ export function Home() {
                   Generate images with text
                 </h2>
                 <h4 className="font-inter font-medium text-[#cccccc] sm:text-sm xss:text-sm sm:w-[90%] mt-3 xss:w-[96%] relative z-10">
-                  Generate stunning images from text prompts using the latest models like Flux Pro, Midjourney, optimized for bulk creation at lightning speed.
+                  Generate stunning images from text prompts using the latest
+                  models like Flux Pro, Midjourney, optimized for bulk creation
+                  at lightning speed.
                 </h4>
                 <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
                   <img
@@ -135,7 +138,8 @@ export function Home() {
                   Text with Generative AI
                 </h2>
                 <h4 className="font-inter font-medium text-[#cccccc] sm:text-sm xss:text-sm sm:w-[90%] mt-3 xss:w-[96%] relative z-10">
-                  Transform ideas into reality using powerful AI models like GPT-4o, Claude, and more, built for creativity and efficiency.
+                  Transform ideas into reality using powerful AI models like
+                  GPT-4o, Claude, and more, built for creativity and efficiency.
                 </h4>
                 <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
                   <img
@@ -147,39 +151,63 @@ export function Home() {
                 </div>
               </div>
 
-              <div className="md:w-[45%] xss:w-[100%] min-w-[250px] px-8 py-8 xss:border-b md:border-b-0 md:border-r border-[#ffffff20] h-[43rem] flex flex-col">
+              <div className="md:w-[45%] xss:w-[100%] min-w-[250px] px-8 py-8 xss:border-b md:border-b-0 md:border-r border-[#ffffff20] h-[22rem] flex flex-col">
                 <h2 className="font-inter text-2xl font-medium">
-                  Generate images with text
+                  Generate in seconds
                 </h2>
                 <h4 className="font-inter font-medium text-[#cccccc] sm:text-sm xss:text-sm sm:w-[90%] mt-3 xss:w-[96%] relative z-10">
-                  Generate stunning images from text prompts using the latest models like Flux Pro, Midjourney, optimized for bulk creation at lightning speed.
+                  With access to models like gpt-4o, Flux Pro, your response is
+                  generated in seconds, delivering fast, accurate results every
+                  time.
                 </h4>
                 <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
-                  <img
+                  {/* <img
                     src="ss.png"
                     className="opacity-75 object-contain fade-effect max-w-full max-h-full"
                     alt="Generated image example"
-                  />
+                  /> */}
+                  <Lottie animationData={light}></Lottie>
                 </div>
               </div>
-              <div className="md:w-[55%] xss:w-[100%]  min-w-[310px] px-8 py-8  h-[43rem] flex flex-col">
+              <div className="md:w-[55%] xss:w-[100%]  min-w-[310px] px-8 py-8  h-[22rem] flex flex-col">
                 <h2 className="font-inter text-2xl font-medium">
-                  Text with Generative AI
+                  We support all LLMs
                 </h2>
                 <h4 className="font-inter font-medium text-[#cccccc] sm:text-sm xss:text-sm sm:w-[90%] mt-3 xss:w-[96%] relative z-10">
-                  Transform ideas into reality using powerful AI models like GPT-4o, Claude, and more, built for creativity and efficiency.
+                  Whether it's OpenAI, Claude, or Your Mom's LLM, we support
+                  everything. giving you the freedom to choose the best AI for
+                  your needs.
                 </h4>
                 <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
-                  <img
+                  {/* <img
                     src="chat.png"
                     className="opacity-75 object-contain fade-effect max-w-full max-h-full"
                     alt="Generated image example"
-                  />
+                  /> */}
                   {/* <Lottie animationData={light}></Lottie> */}
                 </div>
               </div>
             </div>
           </div>
+        </div>
+        <div className="flex flex-col w-[100%] mt-[12.5rem] relative">
+          <h2 className="text-center font-inter font-medium text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-10 relative xs:w-full xss:w-[97%] z-10">
+            Loved by people around the world
+          </h2>
+          <h4 className="text-center font-inter font-medium text-[#cccccc] sm:text-base xss:text-sm sm:w-[60%] mt-3 xss:w-[90%] mx-auto relative z-10">
+            Trusted and admired globally, our platform brings innovation to users everywhere.
+          </h4>
+          <Reviews />
+        </div>
+
+        <div className="flex flex-col w-[100%] mt-[12.5rem] relative">
+          <h2 className="text-center font-inter font-medium text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-10 relative xs:w-full xss:w-[97%] z-10">
+            Loved by people around the world
+          </h2>
+          <h4 className="text-center font-inter font-medium text-[#cccccc] sm:text-base xss:text-sm sm:w-[60%] mt-3 xss:w-[90%] mx-auto relative z-10">
+            Trusted and admired globally, our platform brings innovation to users everywhere.
+          </h4>
+          <Questions />
         </div>
       </div>
       <Particles
