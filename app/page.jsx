@@ -5,20 +5,21 @@ import { useTheme } from "next-themes";
 import Navbar from "../components/Navbar/Navbar";
 import ShinyText from "../components/ShinyText/ShinyText";
 import { BorderBeam } from "../components/ui/border-beam";
-import FlickeringGrid from "../components/ui/flickering-grid";
+// import FlickeringGrid from "../components/ui/flickering-grid";
 import Particles from "../components/ui/particles";
 import Reviews from "../components/Reviews/Reviews";
 import Lottie from "lottie-react";
 import light from "../public/car.json";
 import Questions from "../components/Questions/Questions";
-import { RainbowButton } from "../components/ui/rainbow-button";
+import Footer from "../components/Footer/Footer";
+// import { RainbowButton } from "../components/ui/rainbow-button";
 import { BackgroundBeams } from "../components/ui/background-beams";
+import MorphingText from "../components/ui/morphing-text";
 
 export function Home() {
   const { resolvedTheme } = useTheme();
   const [color, setColor] = useState("#ffffff");
   const [bgColor, setBgColor] = useState("#000000");
-  const [gridWidth, setGridWidth] = useState(1200);
 
   useEffect(() => {
     if (resolvedTheme === "dark") {
@@ -30,30 +31,9 @@ export function Home() {
     }
   }, [resolvedTheme]);
 
-  useEffect(() => {
-    const updateGridWidth = () => {
-      if (window.innerWidth < 768) {
-        setGridWidth(600); // Example width for small screens
-      } else if (window.innerWidth < 1024) {
-        setGridWidth(800); // Example width for medium screens
-      } else if (window.innerWidth < 1920) {
-        setGridWidth(1200); // Default width for large screens
-      } else {
-        setGridWidth(1600); // Example width for 4K screens
-      }
-    };
-
-    updateGridWidth();
-    window.addEventListener("resize", updateGridWidth);
-
-    return () => {
-      window.removeEventListener("resize", updateGridWidth);
-    };
-  }, []);
-
   return (
     <div
-      className="dark flex h-max pb-[100rem] w-full flex-col overflow-hidden"
+      className="dark flex h-max pb-[1rem] w-full flex-col overflow-hidden"
       style={{ backgroundColor: bgColor }}
     >
       <Navbar />
@@ -192,11 +172,6 @@ export function Home() {
                   time.
                 </h4>
                 <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
-                  {/* <img
-                    src="ss.png"
-                    className="opacity-75 object-contain fade-effect max-w-full max-h-full"
-                    alt="Generated image example"
-                  /> */}
                   <Lottie animationData={light}></Lottie>
                 </div>
               </div>
@@ -210,12 +185,7 @@ export function Home() {
                   your needs.
                 </h4>
                 <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
-                  {/* <img
-                    src="chat.png"
-                    className="opacity-75 object-contain fade-effect max-w-full max-h-full"
-                    alt="Generated image example"
-                  /> */}
-                  {/* <Lottie animationData={light}></Lottie> */}
+                  <MorphingText texts={["GPT-4o", "Claude 3.5", "Midjourney", "Flux 1.1 Pro"]} />
                 </div>
               </div>
             </div>
@@ -255,8 +225,8 @@ export function Home() {
             width={gridWidth}
           /> */}
           <div className="flex flex-col justify-center items-center w-full h-full mx-auto my-auto">
-            <h3 className="text-center font-inter font-extrabold text-[#ffffff] sm:text-6xl xs:text-4xl xss:text-4xl leading-10 relative xs:w-full xss:w-[97%] z-10">What are you waiting for??</h3>
-            <p className="text-center mb-5 z-10 font-inter font-medium text-[#cccccc] w-[80%] mt-2.5">
+            <h3 className="text-center font-inter font-extrabold text-[#f5f5f5] sm:text-6xl xs:text-4xl xss:text-4xl leading-10 relative xss:w-[90%] z-10">What are you waiting for?? <br />Join us now!</h3>
+            <p className="text-center mb-5 z-10 font-inter font-medium text-[#cccccc] w-[80%] mt-3">
               Don’t miss out on the chance to access cutting-edge AI tools for free. From generating stunning visuals to crafting compelling text, everything you need is just a click away.
             </p>
             {/* <RainbowButton>Get Started for free</RainbowButton> */}
@@ -265,6 +235,8 @@ export function Home() {
             </button>
           </div>
         </div>
+        <Footer />
+        <p className="text-center font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 dark:from-neutral-950 to-neutral-200 dark:to-neutral-800 w-full overflow-hidden whitespace-nowrap" style={{ fontSize: 'min(17vw)' }}>ZENOS AI</p>
       </div>
       <Particles
         className="absolute -z-1 inset-0"
