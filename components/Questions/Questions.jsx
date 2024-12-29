@@ -1,77 +1,112 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 const faqs = [
   {
-    question: "What is Zenos AI?",
+    question: "What models do you provide?",
     answer:
-      "Zenos AI is an advanced artificial intelligence platform designed to assist with various tasks and provide intelligent solutions.",
+      "We provide a range of advanced AI models including GPT 4o, Claude 3.5 Sonnet, Flux 1.1 Pro, Midjourney, and many more. These models are designed to cater to various applications.",
   },
   {
-    question: "How can I get started with Zenos AI?",
+    question: "Are there any limits?",
     answer:
-      "To get started with Zenos AI, simply sign up for an account on our website and follow the onboarding process. We'll guide you through the initial setup and how to use our features.",
+      "There are no strict usage limits, but spamming and unethical use of our platform are prohibited. We encourage responsible usage to ensure a fair experience for all users.",
   },
   {
-    question: "Is Zenos AI suitable for businesses?",
+    question: "Is the platform really free?",
     answer:
-      "Yes, Zenos AI offers solutions for businesses of all sizes. Our AI can be customized to meet specific industry needs and can help streamline various business processes.",
+      "Yes, the platform is entirely free. There is no cost involved for any features or usage. Enjoy full access without any charges.",
   },
   {
-    question: "What kind of support does Zenos AI offer?",
+    question: "Can I use these AI models for commercial purposes?",
     answer:
-      "We offer 24/7 customer support via email and chat. For enterprise customers, we also provide dedicated support teams and personalized onboarding.",
+      "Yes, they can be used for commercial purposes, including models like GPT 4o and Flux. However, please check each individual model's policies for specific terms and conditions.",
+  },
+  {
+    question: "Do I need an account to use the platform?",
+    answer:
+      "Yes, you need to create an account to access our platform. However, you can try it out for a limited time without an account to explore our basic features and models.",
   },
 ];
 
-const QuestionList = ({ index, question, answer }) => {
-    const [isOpen, setIsOpen] = useState(false);
+const QuestionList = ({ index, question, answer, isOpen, toggleAnswer }) => {
+  const contentRef = useRef(null);
 
-    const toggleAnswer = () => {
-        setIsOpen(!isOpen);
-    };
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.style.maxHeight = isOpen
+        ? `${contentRef.current.scrollHeight}px`
+        : "0px";
+    }
+  }, [isOpen]);
 
-    return (
-        <div key={index} className="px-5 rounded-xl py-2 mb-2 bg-red-500">
-            <div 
-                className="question-header" 
-                onClick={toggleAnswer}
-                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-            >
-                <h2>{question}</h2>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ transition: 'transform 0.3s ease' }}
-                    transform={isOpen ? 'rotate(180)' : ''}
-                >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-            </div>
-            {isOpen && <p>{answer}</p>}
-        </div>
-    );
+  return (
+    <div
+      className={`px-5 rounded-xl py-4 mb-2 border cursor-pointer transition-all ease-out ${
+        isOpen ? "bg-[#2424244b]" : "hover:bg-[#2424244b]"
+      }`}
+      onClick={() => toggleAnswer(index)}
+    >
+      <div
+        className="question-header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h2 className="font-inter font-medium text-[#eaeaea] unselectable">
+          {question}
+        </h2>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`transition-transform duration-300 ease-in-out ${
+            isOpen ? "rotate-180" : "rotate-0"
+          }`}
+        >
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+      <div
+        ref={contentRef}
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: "0px" }}
+      >
+        <p className="mt-3 font-inter text-[#c4c4c4]">{answer}</p>
+      </div>
+    </div>
+  );
 };
 
 const Questions = () => {
+  const [openQuestionIndex, setOpenQuestionIndex] = useState(null);
+
+  const toggleAnswer = (index) => {
+    setOpenQuestionIndex((prevIndex) => (prevIndex === index ? null : index));
+  };
+
   return (
-    <div className="w-full mt-10">        
-        <div className="w-[70%] mx-auto">
+    <div className="w-full flex mt-10">
+      <div className="sm:w-[70%] xss:w-[90%] mx-auto">
         {faqs.map((faq, index) => (
-            <QuestionList
+          <QuestionList
             key={index}
             index={index}
             question={faq.question}
             answer={faq.answer}
-            />
+            isOpen={openQuestionIndex === index}
+            toggleAnswer={toggleAnswer}
+          />
         ))}
-        </div>
+      </div>
+      {/* <div className="w-[30%] border mx-3"></div> */}
     </div>
   );
 };

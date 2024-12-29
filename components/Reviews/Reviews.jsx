@@ -165,7 +165,15 @@ const ReviewChild = ({ name, position, quote, image }) => {
 };
 
 const Reviews = () => {
-  const [hoveredColumns, setHoveredColumns] = useState([false, false, false]);
+    const [hoveredColumns, setHoveredColumns] = useState([false, false, false]);
+    const [windowWidth, setWindowWidth] = useState(0);
+  
+    useEffect(() => {
+      const handleResize = () => setWindowWidth(window.innerWidth);
+      setWindowWidth(window.innerWidth);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
   const handleMouseEnter = (columnIndex) => {
     setHoveredColumns((prev) => {
@@ -200,9 +208,9 @@ const Reviews = () => {
             >
               {[...testimonials, ...testimonials].map((testimonial, index) => {
                 if (
-                  (index % 3 === columnIndex && window.innerWidth >= 1024) ||
-                  (index % 2 === columnIndex % 2 && window.innerWidth >= 640 && window.innerWidth < 1024) ||
-                  window.innerWidth < 640
+                  (windowWidth >= 1024 && index % 3 === columnIndex) ||
+                  (windowWidth >= 640 && windowWidth < 1024 && index % 2 === columnIndex % 2) ||
+                  windowWidth < 640
                 ) {
                   return (
                     <ReviewChild

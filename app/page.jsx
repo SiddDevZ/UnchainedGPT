@@ -5,16 +5,20 @@ import { useTheme } from "next-themes";
 import Navbar from "../components/Navbar/Navbar";
 import ShinyText from "../components/ShinyText/ShinyText";
 import { BorderBeam } from "../components/ui/border-beam";
+import FlickeringGrid from "../components/ui/flickering-grid";
 import Particles from "../components/ui/particles";
 import Reviews from "../components/Reviews/Reviews";
 import Lottie from "lottie-react";
 import light from "../public/car.json";
 import Questions from "../components/Questions/Questions";
+import { RainbowButton } from "../components/ui/rainbow-button";
+import { BackgroundBeams } from "../components/ui/background-beams";
 
 export function Home() {
   const { resolvedTheme } = useTheme();
   const [color, setColor] = useState("#ffffff");
   const [bgColor, setBgColor] = useState("#000000");
+  const [gridWidth, setGridWidth] = useState(1200);
 
   useEffect(() => {
     if (resolvedTheme === "dark") {
@@ -25,6 +29,27 @@ export function Home() {
       setBgColor("#000000");
     }
   }, [resolvedTheme]);
+
+  useEffect(() => {
+    const updateGridWidth = () => {
+      if (window.innerWidth < 768) {
+        setGridWidth(600); // Example width for small screens
+      } else if (window.innerWidth < 1024) {
+        setGridWidth(800); // Example width for medium screens
+      } else if (window.innerWidth < 1920) {
+        setGridWidth(1200); // Default width for large screens
+      } else {
+        setGridWidth(1600); // Example width for 4K screens
+      }
+    };
+
+    updateGridWidth();
+    window.addEventListener("resize", updateGridWidth);
+
+    return () => {
+      window.removeEventListener("resize", updateGridWidth);
+    };
+  }, []);
 
   return (
     <div
@@ -58,7 +83,13 @@ export function Home() {
               alt="Background"
               className="absolute inset-0 w-full h-full object-cover"
             /> */}
-            <BorderBeam size={250} colorFrom={"#e98c00ad"} colorTo={"#e90090ad"} duration={10} delay={9} />
+            <BorderBeam
+              size={250}
+              colorFrom={"#e98c00ad"}
+              colorTo={"#e90090ad"}
+              duration={10}
+              delay={9}
+            />
           </div>
         </div>
         <div className="flex flex-col mt-[2rem]">
@@ -195,19 +226,44 @@ export function Home() {
             Loved by people around the world
           </h2>
           <h4 className="text-center font-inter font-medium text-[#cccccc] sm:text-base xss:text-sm sm:w-[60%] mt-3 xss:w-[90%] mx-auto relative z-10">
-            Trusted and admired globally, our platform brings innovation to users everywhere.
+            Trusted and admired globally, our platform brings innovation to
+            users everywhere.
           </h4>
           <Reviews />
         </div>
 
-        <div className="flex flex-col w-[100%] mt-[12.5rem] relative">
+        <div className="flex flex-col w-[100%] mt-[8.5rem] relative">
           <h2 className="text-center font-inter font-medium text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-10 relative xs:w-full xss:w-[97%] z-10">
-            Loved by people around the world
+            Frequently asked questions
           </h2>
-          <h4 className="text-center font-inter font-medium text-[#cccccc] sm:text-base xss:text-sm sm:w-[60%] mt-3 xss:w-[90%] mx-auto relative z-10">
+          {/* <h4 className="text-center font-inter font-medium text-[#cccccc] sm:text-base xss:text-sm sm:w-[60%] mt-3 xss:w-[90%] mx-auto relative z-10">
             Trusted and admired globally, our platform brings innovation to users everywhere.
-          </h4>
+          </h4> */}
           <Questions />
+        </div>
+
+        <div className="relative w-[90%] mx-auto h-[25rem] mt-[5rem] rounded-lg bg-background overflow-hidden border">
+          <BackgroundBeams />
+          {/* <FlickeringGrid
+            className="z-0 absolute inset-0 size-full"
+            squareSize={4}
+            gridGap={6}
+            color="#6B7280"
+            maxOpacity={0.5}
+            flickerChance={0.1}
+            height={800}
+            width={gridWidth}
+          /> */}
+          <div className="flex flex-col justify-center items-center w-full h-full mx-auto my-auto">
+            <h3 className="text-center font-inter font-extrabold text-[#ffffff] sm:text-6xl xs:text-4xl xss:text-4xl leading-10 relative xs:w-full xss:w-[97%] z-10">What are you waiting for??</h3>
+            <p className="text-center mb-5 z-10 font-inter font-medium text-[#cccccc] w-[80%] mt-2.5">
+              Don’t miss out on the chance to access cutting-edge AI tools for free. From generating stunning visuals to crafting compelling text, everything you need is just a click away.
+            </p>
+            {/* <RainbowButton>Get Started for free</RainbowButton> */}
+            <button className="md:px-6 z-10 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md ">
+              Get Started for free
+            </button>
+          </div>
         </div>
       </div>
       <Particles
