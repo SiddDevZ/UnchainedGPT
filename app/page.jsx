@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useTheme } from "next-themes";
 import Navbar from "../components/Navbar/Navbar";
 import ShinyText from "../components/ShinyText/ShinyText";
@@ -40,8 +41,8 @@ export function Home() {
       <div className="md:w-[75%] sm:w-[85%] xs:w-[85%] xss:w-[95%] flex flex-col justify-center items-center mx-auto">
         <div className="flex flex-col mt-[2.7rem] h-full">
           <ShinyText />
-          <h1 className=" font-semibold py-6 text-center mt-1 md:text-8xl sm:text-7xl xs:text-6xl xss:text-4xl font-inter text-white leading-none text-transparent">
-            Access Any AI Model, All in One Place, for Free.
+          <h1 className="w-[90%] mx-auto font-semibold py-6 text-center mt-1 md:text-8xl sm:text-7xl xs:text-6xl xss:text-4xl font-inter text-white leading-none text-transparent">
+            Any AI Model in One Place for Free
           </h1>
           <h4 className="text-center font-inter font-medium text-[#cccccc] sm:text-lg xss:text-sm sm:w-[70%] xss:w-[95%] mx-auto">
             Discover the power of AI with Free Access to ChatGPT 4o, MidJourney,
@@ -49,12 +50,16 @@ export function Home() {
             innovate, and explore without limits.
           </h4>
           <div className="mx-auto mt-6 space-x-5 font-inter font-medium">
-            <button className="md:px-6 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md ">
-              Get Started for free
-            </button>
-            <button className="md:px-6 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-white xss:text-[1rem] border border-[#838383] bg-black text-btn transition-all ease-in-out rounded-md ">
-              Try it out
-            </button>
+            <Link href="/register">
+              <button className="md:px-6 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md ">
+                Get Started for free
+              </button>
+            </Link>
+            <Link href="/try">
+              <button className="md:px-6 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-white xss:text-[1rem] border border-[#838383] bg-black text-btn transition-all ease-in-out rounded-md ">
+                Try it out
+              </button>
+            </Link>
           </div>
 
           <div className="relative relativee back my-32 flex h-[500px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border-2 bg-background">
@@ -185,7 +190,14 @@ export function Home() {
                   your needs.
                 </h4>
                 <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
-                  <MorphingText texts={["GPT-4o", "Claude 3.5", "Midjourney", "Flux 1.1 Pro"]} />
+                  <MorphingText
+                    texts={[
+                      "GPT-4o",
+                      "Claude 3.5",
+                      "Midjourney",
+                      "Flux 1.1 Pro",
+                    ]}
+                  />
                 </div>
               </div>
             </div>
@@ -225,9 +237,14 @@ export function Home() {
             width={gridWidth}
           /> */}
           <div className="flex flex-col justify-center items-center w-full h-full mx-auto my-auto">
-            <h3 className="text-center font-inter font-extrabold text-[#f5f5f5] sm:text-6xl xs:text-4xl xss:text-4xl leading-10 relative xss:w-[90%] z-10">What are you waiting for?? <br />Join us now!</h3>
+            <h3 className="text-center font-inter font-extrabold text-[#f5f5f5] sm:text-6xl xs:text-4xl xss:text-4xl leading-10 relative xss:w-[90%] z-10">
+              What are you waiting for?? <br />
+              Join us now!
+            </h3>
             <p className="text-center mb-5 z-10 font-inter font-medium text-[#cccccc] w-[80%] mt-3">
-              Don’t miss out on the chance to access cutting-edge AI tools for free. From generating stunning visuals to crafting compelling text, everything you need is just a click away.
+              Don’t miss out on the chance to access cutting-edge AI tools for
+              free. From generating stunning visuals to crafting compelling
+              text, everything you need is just a click away.
             </p>
             {/* <RainbowButton>Get Started for free</RainbowButton> */}
             <button className="md:px-6 z-10 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md ">
@@ -236,7 +253,12 @@ export function Home() {
           </div>
         </div>
         <Footer />
-        <p className="text-center font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 dark:from-neutral-950 to-neutral-200 dark:to-neutral-800 w-full overflow-hidden whitespace-nowrap" style={{ fontSize: 'min(17vw)' }}>ZENOS AI</p>
+        <p
+          className="text-center font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 dark:from-neutral-950 to-neutral-200 dark:to-neutral-800 w-full overflow-hidden whitespace-nowrap"
+          style={{ fontSize: "min(17vw)" }}
+        >
+          ZENOS AI
+        </p>
       </div>
       <Particles
         className="absolute -z-1 inset-0"
