@@ -1,0 +1,19 @@
+{
+  "name": "backend",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "dotenv": "^16.4.7",
+    "hono": "^4.6.15",
+    "hono-rate-limiter": "^0.4.2",
+    "mongoose": "^8.9.3",
+    "nodemon": "^3.1.9"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "tsx": "^4.7.1"
+  }
+}
