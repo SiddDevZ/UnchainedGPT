@@ -10,6 +10,8 @@ import responseRoute from './routes/response.js'
 import googleLoginRoute from './routes/googleLogin.js'
 import verifyRoute from './routes/verify.js'
 import discordLoginRoute from './routes/discordLogin.js'
+import registerRoute from './routes/register.js'
+import loginRoute from './routes/login.js'
 
 const app = new Hono()
 app.use('*', cors())
@@ -21,6 +23,8 @@ app.get('/', (c) => c.text('Hello World!'))
 app.route('/api/response', responseRoute)
 app.route('/api/googleauth', googleLoginRoute)
 app.route('/api/discordauth', discordLoginRoute)
+app.route('/api/login', loginRoute)
+app.route('/api/register', registerRoute)
 
 app.route('/api/verify', verifyRoute)
 
