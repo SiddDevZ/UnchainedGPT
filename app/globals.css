@@ -12,7 +12,57 @@
   transition: all 0.2s;
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
 
+.hero-animate {
+  opacity: 0;
+  animation: fadeInUp 0.25s ease-out forwards;
+}
+
+.hero-animate-delay-1 {
+  animation-delay: 0.2s;
+}
+
+.hero-animate-delay-2 {
+  animation-delay: 0.4s;
+}
+
+.hero-animate-delay-3 {
+  animation-delay: 0.7s;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.hero-animate-down {
+  opacity: 0;
+  animation: fadeInDown 0.4s ease-out forwards;
+}
+
+.hero-animate-delay-0 {
+  animation-delay: 0.8s;
+}
 
 .text-btn:hover {
   filter: drop-shadow(0 0 1.5em #ffffff30);
