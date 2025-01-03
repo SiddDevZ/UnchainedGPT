@@ -209,3 +209,19 @@
     @apply bg-background text-foreground;
     }
 }
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #444;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

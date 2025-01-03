@@ -204,8 +204,8 @@ const page = () => {
   });
 
   return (
-    <div className="dark flex w-full h-screen flex-col items-center justify-center overflow-hidden bg-black">
-      <div className="w-full xss:max-w-full sm:max-w-[29rem] sm:h-max xss:h-screen z-10 flex flex-col items-center justify-center sm:px-10 xss:px-5 py-10 rounded-xl border backdrop-filter backdrop-blur-sm bg-white bg-opacity-[0.02]">
+    <div className="dark flex w-full h-screen flex-col items-center justify-center sm:justify-center overflow-hidden bg-black">
+      <div className="w-full xss:max-w-full sm:max-w-[29rem] sm:h-max xss:h-screen z-10 flex flex-col items-center sm:justify-center xss:justify-start sm:px-10 xss:px-5 py-10 rounded-xl sm:border backdrop-filter backdrop-blur-sm bg-white bg-opacity-[0.02] xss:mt-5 sm:mt-0">
         <div className="w-full flex justify-center mb-6">
           <Link
             href="/"
@@ -298,12 +298,12 @@ const page = () => {
 
         <h5 className="font-inter text-[#cccccc] mt-5">
           Already have an account?{" "}
-          <a
-            href=""
+          <Link
+            href="/login"
             className="ml-0.5 hover:underline decoration-[#c1c1c1] text-white"
           >
             Login
-          </a>
+          </Link>
         </h5>
       </div>
       {!isMobile && (
