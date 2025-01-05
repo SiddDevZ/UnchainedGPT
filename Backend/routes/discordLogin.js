@@ -21,7 +21,7 @@ router.post('/', limiter, async (c) => {
   try {
     const { id, username, email, avatar } = await c.req.json()
     
-    let user = await userModel.findOne({ discordId: id })
+    let user = await userModel.findOne({ email })
 
     if (user) {
       user.lastLogin = new Date()

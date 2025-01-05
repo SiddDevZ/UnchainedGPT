@@ -4,6 +4,7 @@ import "remixicon/fonts/remixicon.css";
 import "./page.css";
 import Input from "../../components/Input/Input";
 import io from "socket.io-client";
+import Cookies from "js-cookie";
 
 const sampleChatData = [
   {
@@ -55,7 +56,7 @@ const Page = () => {
         "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
         "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
         "Dark AI": { display: "DarkAI", value: "DarkAI" },
-        "Liaobots": { display: "Liaobots", value: "Liaobots" },
+        Liaobots: { display: "Liaobots", value: "Liaobots" },
       },
     },
     "Claude 3.5 Sonnet": {
@@ -74,7 +75,7 @@ const Page = () => {
       providers: {
         Auto: { display: "Auto", value: "auto" },
         "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
-        "PollinationsAI": { display: "PollinationsAI", value: "PollinationsAI" },
+        PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
         // "GeminiPro": { display: "GeminiPro", value: "GeminiPro" },
       },
     },
@@ -84,14 +85,13 @@ const Page = () => {
       providers: {
         Auto: { display: "Auto", value: "auto" },
         // "Airforce": { display: "Airforce", value: "Airforce" },
-        "PollinationsAI": { display: "PollinationsAI", value: "PollinationsAI" },
+        PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
       },
     },
   };
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [startedTyping, setStartedTyping] = useState(false);
   const [messages, setMessages] = useState([]);
   const [generatingMessage, setGeneratingMessage] = useState({});
   const [isGenerating, setIsGenerating] = useState(false);
@@ -107,12 +107,114 @@ const Page = () => {
   const [startTime, setStartTime] = useState(null);
   const [timeMetaData, setTimeMetaData] = useState({});
   const [messageMetadata, setMessageMetadata] = useState({});
-  const [errorData, setErrorData] = useState([]);
+  const latestMetadataRef = useRef(messageMetadata);
+  const [chatId, setChatId] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [chatData, setChatData] = useState([]);
 
   const calculateResponseTime = (start, end) => {
     const timeDiff = end - start;
     return (timeDiff / 1000).toFixed(1); // Convert to seconds and round to 1 decimal place
   };
+
+  const fetchAndCategorizeChats = async (userId) => {
+    console.log(userId);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/fetchchats/${userId}`
+      );
+      const data = await response.json();
+
+      if (data.chats) {
+        setChatData(data.chats);
+      } else {
+        console.error("No chats data received from the server");
+        setChatData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+      setChatData([]);
+    }
+  };
+
+  const newChat = async () => {
+    setChatId(null);
+    setMessages([]);
+  }
+
+  const fetchSpecificChat = async (chatId) => {
+    if (!chatId) {
+      console.error("No chat ID provided");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/fetchchat/${chatId}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch chat");
+      }
+      const data = await response.json();
+
+      if (data) {
+        setMessages(data.messages || []);
+        setChatId(chatId);
+
+        if (data.metaData) {
+          setMessageMetadata(data.metaData);
+        }
+
+        if (data.timeData) {
+          setTimeMetaData(data.timeData);
+        }
+      } else {
+        console.error("No chat data received from the server");
+      }
+    } catch (error) {
+      console.error("Error fetching specific chat:", error);
+    }
+  };
+
+  useEffect(() => {
+    latestMetadataRef.current = messageMetadata;
+  }, [messageMetadata]);
+
+  useEffect(() => {
+    const verifyTokenAndFetchChats = async () => {
+      const token = Cookies.get("token");
+      if (token) {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/verify`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ token }),
+            }
+          );
+          const data = await response.json();
+          if (data.valid) {
+            setUserId(data.userId);
+            await fetchAndCategorizeChats(data.userId);
+          } else {
+            Cookies.remove("token");
+            window.location.href = "/login";
+          }
+        } catch (error) {
+          console.error("Error verifying token:", error);
+          Cookies.remove("token");
+          window.location.href = "/login";
+        }
+      } else {
+        window.location.href = "/login";
+      }
+    };
+
+    verifyTokenAndFetchChats();
+  }, []);
 
   useEffect(() => {
     if (isGenerating) {
@@ -122,13 +224,13 @@ const Page = () => {
       const time = calculateResponseTime(startTime, endTime);
       setResponseTime(time);
       setStartTime(null);
-      
+
       setTimeMetaData((prevTimeMetaData) => {
         const lastMessageIndex = messages.length - 1;
         if (lastMessageIndex >= 0) {
           return {
             ...prevTimeMetaData,
-            [lastMessageIndex]: time
+            [lastMessageIndex]: time,
           };
         }
         return prevTimeMetaData;
@@ -212,32 +314,97 @@ const Page = () => {
       scrollToBottom();
     });
 
+    const provider = null;
+    console.log(provider);
+
     socket.on("prov", (provider) => {
-      const old_data = messageMetadata;
       const newMessageIndex = messages.length + 1;
-      const new_data = {...old_data, [newMessageIndex]: { model: selectedModel, provider } };
-      setMessageMetadata(new_data);
+      setMessageMetadata((prevMetadata) => {
+        const newMetadata = {
+          ...prevMetadata,
+          [newMessageIndex]: { model: selectedModel, provider },
+        };
+        latestMetadataRef.current = newMetadata;
+        return newMetadata;
+      });
     });
 
-    // socket.on("error", (error) => {
-    //   const old_data = errorData;
-    //   const newMessageIndex = messages.length + 1;
-    //   const new_data = {...old_data, [newMessageIndex]: { model: selectedModel, provider } };
-    //   setMessageMetadata(new_data);
-    // });
-
-    socket.on("done", () => {
+    socket.on("done", async () => {
       setIsGenerating(false);
-      setMessages((prevMessages) => [
-        ...prevMessages,
+      const newMessages = [
+        ...messages,
+        { role: "user", content: message },
         { role: "assistant", content: generatedContent },
-      ]);
+      ];
+      setMessages(newMessages);
       setGeneratingMessage({});
+
       scrollToBottom();
+
+      try {
+        // Only proceed if generatedContent is not empty
+        if (generatedContent.trim() !== "") {
+          let currentChatId = chatId;
+          if (!currentChatId) {
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/chat`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  title:
+                    newMessages[newMessages.length - 1].content.substring(0, 20) +
+                    "...",
+                  user_id: userId,
+                }),
+              }
+            );
+            console.log("Created new chat:");
+            const data = await response.json();
+            currentChatId = data.chat_id;
+            setChatId(currentChatId);
+          }
+          // Store messages in the backend
+          await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                messages: [
+                  {
+                    index: newMessages.length - 1,
+                    role: newMessages[newMessages.length - 2].role,
+                    content: newMessages[newMessages.length - 2].content,
+                    timeItTook: timeMetaData[newMessages.length - 1],
+                  },
+                  {
+                    index: newMessages.length,
+                    role: newMessages[newMessages.length - 1].role,
+                    content: newMessages[newMessages.length - 1].content,
+                    model:
+                      latestMetadataRef.current[newMessages.length - 1]?.model,
+                    provider:
+                      latestMetadataRef.current[newMessages.length - 1]?.provider,
+                    timeItTook: timeMetaData[newMessages.length],
+                  },
+                ],
+              }),
+            }
+          );
+        }
+      } catch (error) {
+        console.error("Error storing chat or messages:", error);
+      }
 
       // Remove the listeners to avoid duplicates on next message
       socket.off("chunk");
       socket.off("done");
+      socket.off("prov");
     });
   };
 
@@ -299,21 +466,22 @@ const Page = () => {
               Zenos AI
             </h1>
           </div>
-          <button className="font-medium flex items-center space-x-2 w-full hover:bg-[#383838] px-2.5 py-1 rounded-lg transition-all">
+          <button onClick={() => newChat()} className="font-medium flex items-center space-x-2 w-full hover:bg-[#383838] px-2.5 py-1 rounded-lg transition-all">
             <i className="ri-chat-new-line text-[#e2e2e2] text-xl"></i>
             <span className="text-[#e2e2e2] font-semibold">New Chat</span>
           </button>
         </div>
-        <div className="mt-1 border-t border-[#414141] h-max overflow-y-auto">
-          <div className="px-2 py-3">
-            {sampleChatData.map(({ category, chats }) => (
+        <div className="flex-1 overflow-hidden border-t border-[#414141]">
+          <div className="h-full overflow-y-auto px-2 py-3">
+            {chatData.map(({ category, chats }) => (
               <div key={category} className="mb-4">
                 <h6 className="text-[#8e8e8e] text-xs font-medium mb-2 px-2.5 tracking-wider">
                   {category}
                 </h6>
-                {chats.map((chat, index) => (
+                {chats.map((chat) => (
                   <button
-                    key={index}
+                    key={chat.id}
+                    onClick={() => fetchSpecificChat(chat.id)}
                     className="w-full mb-0.5 text-left px-2.5 py-1.5 rounded-lg 
                                hover:bg-gradient-to-r hover:from-[#383838] hover:to-[#2a2a2a] 
                                transition-all duration-300 ease-in-out 
@@ -323,7 +491,7 @@ const Page = () => {
                       className="text-[#e6e6e6] group-hover:text-white text-[0.96rem] whitespace-nowrap overflow-hidden text-ellipsis block
                                       transition-colors duration-300"
                     >
-                      {chat}
+                      {chat.title}
                     </span>
                     <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#212121] group-hover:from-[#2a2a2a] to-transparent"></div>
                   </button>
@@ -338,7 +506,7 @@ const Page = () => {
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img
-                    src="https://cdn.discordapp.com/attachments/907704242930864168/1324727244198772827/IMG_20240513_220756_841.jpg?ex=677a8563&is=677933e3&hm=e2d1921b576ed42cd06aeb5bdbbbd20200352074512dacf2f3d54805e36d997f&"
+                    src="https://cdn.discordapp.com/avatars/273352781442842624/438d2199d43d5989d4dcd7772f13f835.png"
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -471,7 +639,10 @@ const Page = () => {
                             <div className="space-y-2 message-container">
                               <div className="text-sm font-inter md:text-base text-[#e2e2e2] leading-relaxed">
                                 {message.content === "" ? (
-                                  <span className="text-[#ef4444]">Error: No response received. Please try with a different model.</span>
+                                  <span className="text-[#ef4444]">
+                                    Error: No response received. Please try with
+                                    a different model.
+                                  </span>
                                 ) : (
                                   message.content
                                 )}
