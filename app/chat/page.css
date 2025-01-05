@@ -97,3 +97,19 @@
 .model-dropdown {
   animation: dropdownOpen 0.25s ease-out;
 }
+
+.blinking-cursor {
+    margin-left: 5px;
+    background-color: #595959;
+    color: #595959;
+    width: 8px;
+    animation: blink 1s infinite;
+  }
+  @keyframes blink {
+    0%, 50% {
+      opacity: 1;
+    }
+    50.1%, 100% {
+      opacity: 0;
+    }
+  }

@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import "remixicon/fonts/remixicon.css";
 import "./page.css";
 import Input from "../../components/Input/Input";
+import io from "socket.io-client";
 
 const sampleChatData = [
   {
@@ -45,9 +46,202 @@ const sampleChatData = [
 ];
 
 const Page = () => {
+  const models = {
+    "GPT-4o": {
+      display: "GPT-4o",
+      value: "gpt-4o",
+      providers: {
+        Auto: { display: "Auto", value: "auto" },
+        "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
+        "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+        "Dark AI": { display: "DarkAI", value: "DarkAI" },
+        "Liaobots": { display: "Liaobots", value: "Liaobots" },
+      },
+    },
+    "Claude 3.5 Sonnet": {
+      display: "Claude 3.5",
+      value: "claude-3.5-sonnet",
+      providers: {
+        Auto: { display: "Auto", value: "auto" },
+        "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+        // "Liaobots": { display: "Liaobots", value: "Liaobots" },
+        "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
+      },
+    },
+    "Qwen 2.5 Coder": {
+      display: "Qwen Coder",
+      value: "qwen-2.5-coder-32b",
+      providers: {
+        Auto: { display: "Auto", value: "auto" },
+        "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
+        "PollinationsAI": { display: "PollinationsAI", value: "PollinationsAI" },
+        // "GeminiPro": { display: "GeminiPro", value: "GeminiPro" },
+      },
+    },
+    "Evil (Experimental)": {
+      display: "Evil",
+      value: "evil",
+      providers: {
+        Auto: { display: "Auto", value: "auto" },
+        // "Airforce": { display: "Airforce", value: "Airforce" },
+        "PollinationsAI": { display: "PollinationsAI", value: "PollinationsAI" },
+      },
+    },
+  };
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [startedTyping, setStartedTyping] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [generatingMessage, setGeneratingMessage] = useState({});
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const messagesRef = useRef();
+  const [autoScroll, setAutoScroll] = useState(true);
+  const messagesEndRef = useRef(null);
+  const [selectedModel, setSelectedModel] = useState(Object.keys(models)[0]);
+  const [selectedProvider, setSelectedProvider] = useState(
+    Object.keys(models[Object.keys(models)[0]].providers)[0]
+  );
+  const [responseTime, setResponseTime] = useState(null);
+  const [startTime, setStartTime] = useState(null);
+  const [timeMetaData, setTimeMetaData] = useState({});
+  const [messageMetadata, setMessageMetadata] = useState({});
+  const [errorData, setErrorData] = useState([]);
+
+  const calculateResponseTime = (start, end) => {
+    const timeDiff = end - start;
+    return (timeDiff / 1000).toFixed(1); // Convert to seconds and round to 1 decimal place
+  };
+
+  useEffect(() => {
+    if (isGenerating) {
+      setStartTime(Date.now());
+    } else if (startTime) {
+      const endTime = Date.now();
+      const time = calculateResponseTime(startTime, endTime);
+      setResponseTime(time);
+      setStartTime(null);
+      
+      setTimeMetaData((prevTimeMetaData) => {
+        const lastMessageIndex = messages.length - 1;
+        if (lastMessageIndex >= 0) {
+          return {
+            ...prevTimeMetaData,
+            [lastMessageIndex]: time
+          };
+        }
+        return prevTimeMetaData;
+      });
+    }
+  }, [isGenerating]);
+
+  useEffect(() => {
+    console.log(selectedModel);
+    console.log(selectedProvider);
+  }, [selectedModel, selectedProvider]);
+
+  const scrollToBottom = () => {
+    if (autoScroll && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    const isAtBottom = scrollHeight - scrollTop === clientHeight;
+    setAutoScroll(isAtBottom);
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, generatingMessage]);
+
+  useEffect(() => {
+    // Ensure this runs only on the client side
+    if (typeof window !== "undefined") {
+      const newSocket = io("http://localhost:3001", {
+        path: "/socket.io",
+        transports: ["websocket", "polling"],
+      });
+
+      newSocket.on("connect", () => {
+        console.log("Connected to Socket.IO server on port 3001");
+        setSocket(newSocket);
+      });
+
+      newSocket.on("connect_error", (error) => {
+        console.error("Socket.IO connection error:", error);
+      });
+
+      return () => {
+        if (newSocket) newSocket.close();
+      };
+    }
+  }, []);
+
+  const handleSendMessage = (message, selectedModel, selectedProvider) => {
+    setIsGenerating(true);
+
+    let providers;
+    if (selectedProvider === "Auto") {
+      // Get all providers except "Auto" for the selected model
+      providers = Object.entries(models[selectedModel].providers)
+        .slice(1) // Skip the first entry (Auto)
+        .map(([key, value]) => value.value);
+    } else {
+      providers = [models[selectedModel].providers[selectedProvider].value];
+    }
+
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { role: "user", content: message },
+    ]);
+
+    let generatedContent = "";
+
+    socket.emit("message", {
+      message,
+      model: models[selectedModel].value,
+      provider: providers,
+    });
+
+    socket.on("chunk", (chunk) => {
+      generatedContent += chunk;
+      setGeneratingMessage({ role: "assistant", content: generatedContent });
+      scrollToBottom();
+    });
+
+    socket.on("prov", (provider) => {
+      const old_data = messageMetadata;
+      const newMessageIndex = messages.length + 1;
+      const new_data = {...old_data, [newMessageIndex]: { model: selectedModel, provider } };
+      setMessageMetadata(new_data);
+    });
+
+    // socket.on("error", (error) => {
+    //   const old_data = errorData;
+    //   const newMessageIndex = messages.length + 1;
+    //   const new_data = {...old_data, [newMessageIndex]: { model: selectedModel, provider } };
+    //   setMessageMetadata(new_data);
+    // });
+
+    socket.on("done", () => {
+      setIsGenerating(false);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { role: "assistant", content: generatedContent },
+      ]);
+      setGeneratingMessage({});
+      scrollToBottom();
+
+      // Remove the listeners to avoid duplicates on next message
+      socket.off("chunk");
+      socket.off("done");
+    });
+  };
+
+  // Add this useEffect to handle real-time updates of the generating message
 
   useLayoutEffect(() => {
     const checkScreenSize = () => {
@@ -82,7 +276,7 @@ const Page = () => {
       <div
         className={`
           h-full bg-[#212121] w-[17.5rem] flex-shrink-0 flex flex-col
-          ${mounted ? 'transition-all duration-300 ease-in-out' : ''}
+          ${mounted ? "transition-all duration-300 ease-in-out" : ""}
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
           ${isMobile ? "fixed left-0 top-0 z-40" : ""}
         `}
@@ -144,7 +338,7 @@ const Page = () => {
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img
-                    src="https://cdn.discordapp.com/attachments/907704242930864168/1324727244198772827/IMG_20240513_220756_841.jpg?ex=677933e3&is=6777e263&hm=16c5c62660063d3b4d85b2eed9a326bdcae507c09b0c3d01b94a5b74234a863b&"
+                    src="https://cdn.discordapp.com/attachments/907704242930864168/1324727244198772827/IMG_20240513_220756_841.jpg?ex=677a8563&is=677933e3&hm=e2d1921b576ed42cd06aeb5bdbbbd20200352074512dacf2f3d54805e36d997f&"
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -165,7 +359,7 @@ const Page = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Main Content */}
       <div className="flex-grow bg-[#121212] flex flex-col h-full">
         {/* Mobile header */}
@@ -182,14 +376,180 @@ const Page = () => {
         </div>
 
         <div className="flex flex-col flex-grow overflow-hidden">
-          {/* Messages will go here */}
-          <div className="flex-grow overflow-y-auto pb-20 md:pb-0">
-            {/* Your messages content here */}
+          {/* Messages or Welcome section */}
+          <div
+            ref={messagesRef}
+            onScroll={handleScroll}
+            className="flex-grow overflow-y-auto pb-20 md:pb-0 px-4 md:px-8"
+          >
+            <div className="flex flex-col h-max pt-20 w-full rounded-lg pb-20">
+              <section className="flex max-w-4xl mx-auto flex-col w-full gap-6">
+                {/* User message */}
+                <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[95%] md:max-w-[85%] rounded-lg transition-all mr-auto">
+                  <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] rounded-lg shadow-lg overflow-hidden border border-[#3a3a3a]">
+                    {/* Model information */}
+                    <div className="bg-gradient-to-r from-[#2a2a2a] to-[#252525] text-[#8e8e8e] text-xs font-medium py-2 px-4 flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <i className="ri-ai-generate text-[#c69326] text-lg"></i>
+                        <span className="text-[#a0a0a0] font-semibold">
+                          GPT-4
+                        </span>
+                        <span className="text-[#8e8e8e] text-xs">
+                          with Pollinations AI
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {/* <span className="text-[#8e8e8e] text-xs sm:block hidden">
+                          Tokens: 9
+                        </span> */}
+                        <span className="text-[#8e8e8e] text-xs">
+                          Time: 0.7s
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Response content */}
+                    <div className="p-4 bg-gradient-to-b from-[#212121] to-[#1a1a1a]">
+                      <div className="space-y-2 message-container">
+                        <div className="text-sm font-inter md:text-base text-[#e2e2e2] leading-relaxed">
+                          Hello Siddharth! How can I assist you today?
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {messages.map((message, index) => (
+                  <React.Fragment key={index}>
+                    {message.role === "user" ? (
+                      <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[95%] md:max-w-[85%] border border-[#414141] rounded-lg p-4 transition-all ml-auto bg-[#1e1e1e] shadow-lg">
+                        <div className="space-y-2">
+                          <p className="text-sm font-inter md:text-base text-[#e6e6e6]">
+                            {message.content}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[95%] md:max-w-[85%] rounded-lg transition-all mr-auto">
+                        <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] rounded-lg shadow-lg overflow-hidden border border-[#3a3a3a]">
+                          {/* Model information */}
+                          <div className="bg-gradient-to-r from-[#2a2a2a] to-[#252525] text-[#8e8e8e] text-xs font-medium py-2 px-4 flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              {messageMetadata[index] ? (
+                                <>
+                                  <i className="ri-ai-generate text-[#c69326] text-lg"></i>
+                                  <div className="metadata space-x-2">
+                                    <span className="text-[#a0a0a0] font-semibold">
+                                      {messageMetadata[index].model}
+                                    </span>
+                                    <span className="text-[#8e8e8e] text-xs">
+                                      with {messageMetadata[index].provider}
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <i className="ri-error-warning-line text-yellow-500 text-lg"></i>
+                                  <span className="text-[#a0a0a0]  font-semibold">
+                                    Error
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              {/* <span className="text-[#8e8e8e] text-xs sm:block hidden">
+                                Tokens: 150
+                              </span> */}
+                              <span className="text-[#8e8e8e] text-xs">
+                                Time: {timeMetaData[index]}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Response content */}
+                          <div className="p-4 bg-gradient-to-b from-[#212121] to-[#1a1a1a]">
+                            <div className="space-y-2 message-container">
+                              <div className="text-sm font-inter md:text-base text-[#e2e2e2] leading-relaxed">
+                                {message.content === "" ? (
+                                  <span className="text-[#ef4444]">Error: No response received. Please try with a different model.</span>
+                                ) : (
+                                  message.content
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Copy button */}
+                    {message.role === "assistant" && (
+                      <button className="animate-in group cursor-pointer p-1.5 flex items-center w-fit -mt-4">
+                        <i className="ri-file-copy-line text-[#8e8e8e] group-hover:text-[#c1c1c1] transition-all"></i>
+                        <span className="text-xs md:text-sm ml-1.5 text-[#8e8e8e] group-hover:text-[#c1c1c1] transition-all">
+                          Copy
+                        </span>
+                      </button>
+                    )}
+                  </React.Fragment>
+                ))}
+
+                {isGenerating && (
+                  <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[95%] md:max-w-[85%] rounded-lg transition-all mr-auto">
+                    <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] rounded-lg shadow-lg overflow-hidden border border-[#3a3a3a]">
+                      {/* Model information */}
+                      <div className="bg-gradient-to-r from-[#2a2a2a] to-[#252525] text-[#8e8e8e] text-xs font-medium py-2 px-4 flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <i className="ri-ai-generate text-[#c69326] text-lg"></i>
+                          {messageMetadata[messages.length] ? (
+                            <div className="metadata space-x-2">
+                              <span className="text-[#a0a0a0] font-semibold">
+                                {messageMetadata[messages.length].model}
+                              </span>
+                              <span className="text-[#8e8e8e] text-xs">
+                                with {messageMetadata[messages.length].provider}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[#8e8e8e] font-semibold">
+                              Generating...
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Response content */}
+                      <div className="p-4 bg-gradient-to-b from-[#212121] to-[#1a1a1a]">
+                        <div className="space-y-2 message-container">
+                          <div className="text-sm font-inter md:text-base text-[#e2e2e2] leading-relaxed">
+                            {Object.keys(generatingMessage).length === 0 ||
+                            generatingMessage.content === "" ? (
+                              <div className="blinking-cursor">|</div>
+                            ) : (
+                              generatingMessage.content
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </section>
+            </div>
           </div>
 
           {/* Input Section */}
           <div className="flex-shrink-0 fixed bottom-0 left-0 right-0 md:relative bg-[#121212]">
-            <Input />
+            <Input
+              handleSendMessage={handleSendMessage}
+              models={models}
+              selectedModel={selectedModel}
+              setSelectedModel={setSelectedModel}
+              selectedProvider={selectedProvider}
+              setSelectedProvider={setSelectedProvider}
+              isGenerating={isGenerating}
+            />
           </div>
         </div>
       </div>

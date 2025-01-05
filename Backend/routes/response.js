@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { rateLimiter } from "hono-rate-limiter"
-import { spawn } from 'child_process'
+import fetch from 'node-fetch'
 
 const router = new Hono()
 
@@ -11,43 +11,120 @@ const limiter = rateLimiter({
   keyGenerator: (c) => c.req.header('x-forwarded-for') || c.req.ip,
 })
 
-function callPythonFunction(userInput) {
-  return new Promise((resolve, reject) => {
-    const pythonProcess = spawn('python', ['routes/utils/getResponse.py', userInput]);
-    let output = '';
+export class ChatBot {
+    constructor() {
+        this.conversationHistory = [];
+        this.defaultModel = "gpt-4o";
+        this.providers = ['Blackbox', 'DarkAI', 'PollinationsAI'];
+    }
 
-    pythonProcess.stdout.on('data', (data) => {
-      output += data.toString();
-    });
+    async getResponse(prompt, socket, model, providers) {
+        // Update model and providers with the ones provided by the server
+        this.defaultModel = model || this.defaultModel;
+        this.providers = providers || this.providers;
 
-    pythonProcess.stderr.on('data', (data) => {
-      console.error(`Error from Python: ${data.toString()}`);
-    });
+        const messages = [...this.conversationHistory, { role: "user", content: prompt }];
+        let chosenProvider = null;
+        let fullResponse = "";
+        const abortControllers = new Map();
+        let providerEmitted = false;
 
-    pythonProcess.on('close', (code) => {
-      if (code === 0) {
-        resolve(output.trim());
-      } else {
-        reject(`Python process exited with code ${code}`);
-      }
-    });
-  });
+        const providerPromises = this.providers.map(provider => {
+            const controller = new AbortController();
+            abortControllers.set(provider, controller);
+
+            return (async () => {
+                try {
+                    const response = await fetch('http://localhost:1337/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'text/event-stream'
+                        },
+                        signal: controller.signal,
+                        body: JSON.stringify({
+                            model: this.defaultModel,
+                            messages: messages,
+                            provider: provider,
+                            stream: true
+                        })
+                    });
+
+                    if (!response.ok) return null;
+
+                    let isFirstChunk = true;
+                    for await (const chunk of response.body) {
+                        if (chosenProvider && chosenProvider !== provider) {
+                            controller.abort();
+                            return null;
+                        }
+
+                        const text = new TextDecoder().decode(chunk);
+                        const lines = text.split('\n');
+
+                        for (const line of lines) {
+                            if (!line.trim() || line === 'data: [DONE]') continue;
+
+                            try {
+                                const jsonStr = line.replace(/^data: /, '');
+                                const parsed = JSON.parse(jsonStr);
+                                const content = parsed.choices?.[0]?.delta?.content;
+
+                                if (content) {
+                                    if (isFirstChunk) {
+                                        isFirstChunk = false;
+                                        if (!chosenProvider) {
+                                            chosenProvider = provider;
+                                            if (!providerEmitted) {
+                                                socket.emit('prov', provider);
+                                                providerEmitted = true;
+                                            }
+                                            for (const [otherProvider, ctrl] of abortControllers) {
+                                                if (otherProvider !== provider) {
+                                                    ctrl.abort();
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (provider === chosenProvider) {
+                                        socket.emit('chunk', content);
+                                        fullResponse += content;
+                                    }
+                                }
+                            } catch (e) {
+                                continue;
+                            }
+                        }
+                    }
+                    return provider;
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        return null;
+                    }
+                    console.error(`Error with ${provider}:`, error);
+                    return null;
+                }
+            })();
+        });
+
+        await Promise.allSettled(providerPromises);
+
+        if (fullResponse) {
+            this.conversationHistory.push(
+                { role: "user", content: prompt },
+                { role: "assistant", content: fullResponse }
+            );
+        } else {
+            socket.emit('error', 'No provider returned a valid response');
+        }
+
+        socket.emit('done');
+    }
 }
 
 router.post('/', limiter, async (c) => {
-  try {
-    const { input } = await c.req.json();
-    
-    if (!input) {
-      return c.json({ error: 'Input is required' }, 400);
-    }
-
-    const response = await callPythonFunction(input);
-    return c.json({ response });
-  } catch (error) {
-    console.error('Error:', error);
-    return c.json({ error: 'An error occurred while processing your request' }, 500);
-  }
+    return c.json({ message: "Please connect via WebSocket for real-time communication" });
 })
 
 export default router
