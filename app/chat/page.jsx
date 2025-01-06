@@ -127,8 +127,44 @@ const Page = () => {
   };
 
   const newChat = async () => {
-    setChatId("temp");
+    setChatId(null);
     setMessages([]);
+
+    const newChatEntry = {
+      id: 'temp',
+      title: 'New chat',
+    };
+  
+    // Update the chatData state
+    setChatData(prevChatData => {
+      let updatedChats = [...prevChatData];
+      const recentCategoryIndex = updatedChats.findIndex(
+        (category) => category.category === "Recent"
+      );
+  
+      if (recentCategoryIndex !== -1) {
+
+        const newChatExists = updatedChats[recentCategoryIndex].chats.some(
+          chat => chat.id === 'temp' && chat.title === 'New chat'
+        );
+
+        if (!newChatExists) {
+          updatedChats[recentCategoryIndex].chats.unshift(newChatEntry);
+        }
+      } else {
+        updatedChats.unshift({
+          category: "Recent",
+          chats: [newChatEntry],
+        });
+      }
+  
+      console.log(updatedChats);
+      return updatedChats;
+    });
+  
+    if (isMobile) {
+      toggleSidebar();
+    }
   };
 
   const handleStopGeneration = async () => {
