@@ -39,13 +39,11 @@ app.route('/api/fetchchat', fetchChatRoute)
 
 const port = process.env.PORT || 3001
 
-// Create a server using the serve function from @hono/node-server
 const server = serve({
   fetch: app.fetch,
   port
 })
 
-// Initialize Socket.IO
 const io = new Server(server, {
     cors: {
         origin: "*",
@@ -54,17 +52,52 @@ const io = new Server(server, {
 });
 
 const chatbot = new ChatBot();
+const conversationHistories = new Map();
 
 io.on('connection', (socket) => {
     console.log('A user connected');
 
-    socket.on('message', async ({ message, model, provider }) => {
+    socket.on('message', async ({ message, model, providers, chatId }) => {
+        if (!chatId) {
+            socket.emit('error', 'Chat ID is required');
+            return;
+        }
+
+        let history;
+        if (!conversationHistories.has(chatId)) {
+            socket.emit('requestHistory', chatId);
+            
+            history = await new Promise((resolve) => {
+                socket.once('provideHistory', (data) => {
+                    if (data && Array.isArray(data.history)) {
+                        resolve(data.history);
+                    } else {
+                        resolve([]);
+                    }
+                });
+
+                setTimeout(() => {
+                    resolve([]);
+                }, 5000);
+            });
+
+            conversationHistories.set(chatId, history);
+        } else {
+            history = conversationHistories.get(chatId);
+        }
+
+
         try {
-            // Use the model and provider sent by the user
-            await chatbot.getResponse(message, socket, model, provider);
+            history.push({ role: "user", content: message });
+
+            const fullResponse = await chatbot.getResponse(socket, model, providers, history);
+
+            history.push({ role: "assistant", content: fullResponse });
+
+            conversationHistories.set(chatId, history);
         } catch (error) {
             console.error('Error processing message:', error);
-            socket.emit('error', 'An error occurred while processing your message');
+            socket.emit('error', error.message);
         }
     });
 

@@ -88,6 +88,16 @@ const Page = () => {
         PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
       },
     },
+    "LLaMA 3.3 70B": {
+      display: "LLaMA 3.3",
+      value: "llama-3.3-70b",
+      providers: {
+        Auto: { display: "Auto", value: "auto" },
+        "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+        PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
+        Perplexity: { display: "Perplexity", value: "PerplexityLabs" },
+      },
+    },
   };
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -111,6 +121,11 @@ const Page = () => {
   const [chatId, setChatId] = useState(null);
   const [userId, setUserId] = useState(null);
   const [chatData, setChatData] = useState([]);
+  const latestChatIdRef = useRef(null);
+
+  useEffect(() => {
+    latestChatIdRef.current = chatId;
+  }, [chatId]);
 
   const calculateResponseTime = (start, end) => {
     const timeDiff = end - start;
@@ -140,7 +155,7 @@ const Page = () => {
   const newChat = async () => {
     setChatId(null);
     setMessages([]);
-  }
+  };
 
   const fetchSpecificChat = async (chatId) => {
     if (!chatId) {
@@ -306,6 +321,22 @@ const Page = () => {
       message,
       model: models[selectedModel].value,
       provider: providers,
+      chatId: latestChatIdRef.current,
+    });
+
+    socket.on("requestHistory", (chatIde) => {
+
+      const filteredMessages = messages.map(({ role, content }) => ({
+        role,
+        content,
+      }));
+
+      socket.emit("provideHistory", { history: filteredMessages });
+    });
+
+    socket.on("requestChatId", () => {
+      console.log("chatid: ",  latestChatIdRef.current)
+      socket.emit("provideChatId", { chatId:  latestChatIdRef.current });
     });
 
     socket.on("chunk", (chunk) => {
@@ -355,8 +386,10 @@ const Page = () => {
                 },
                 body: JSON.stringify({
                   title:
-                    newMessages[newMessages.length - 1].content.substring(0, 20) +
-                    "...",
+                    newMessages[newMessages.length - 1].content.substring(
+                      0,
+                      20
+                    ) + "...",
                   user_id: userId,
                 }),
               }
@@ -389,7 +422,8 @@ const Page = () => {
                     model:
                       latestMetadataRef.current[newMessages.length - 1]?.model,
                     provider:
-                      latestMetadataRef.current[newMessages.length - 1]?.provider,
+                      latestMetadataRef.current[newMessages.length - 1]
+                        ?.provider,
                     timeItTook: timeMetaData[newMessages.length],
                   },
                 ],
@@ -405,6 +439,8 @@ const Page = () => {
       socket.off("chunk");
       socket.off("done");
       socket.off("prov");
+      socket.off("requestHistory");
+      socket.off("requestChatId");
     });
   };
 
@@ -466,7 +502,10 @@ const Page = () => {
               Zenos AI
             </h1>
           </div>
-          <button onClick={() => newChat()} className="font-medium flex items-center space-x-2 w-full hover:bg-[#383838] px-2.5 py-1 rounded-lg transition-all">
+          <button
+            onClick={() => newChat()}
+            className="font-medium flex items-center space-x-2 w-full hover:bg-[#383838] px-2.5 py-1 rounded-lg transition-all"
+          >
             <i className="ri-chat-new-line text-[#e2e2e2] text-xl"></i>
             <span className="text-[#e2e2e2] font-semibold">New Chat</span>
           </button>

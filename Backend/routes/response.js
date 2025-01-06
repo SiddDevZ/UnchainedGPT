@@ -13,17 +13,19 @@ const limiter = rateLimiter({
 
 export class ChatBot {
     constructor() {
-        this.conversationHistory = [];
+        // this.conversationHistories = new Map();
         this.defaultModel = "gpt-4o";
         this.providers = ['Blackbox', 'DarkAI', 'PollinationsAI'];
     }
 
-    async getResponse(prompt, socket, model, providers) {
-        // Update model and providers with the ones provided by the server
+    async getResponse(socket, model, providers, history) {
+        
         this.defaultModel = model || this.defaultModel;
         this.providers = providers || this.providers;
 
-        const messages = [...this.conversationHistory, { role: "user", content: prompt }];
+        console.log("\n".repeat(40));
+
+        console.log(history)
         let chosenProvider = null;
         let fullResponse = "";
         const abortControllers = new Map();
@@ -44,7 +46,7 @@ export class ChatBot {
                         signal: controller.signal,
                         body: JSON.stringify({
                             model: this.defaultModel,
-                            messages: messages,
+                            messages: history,
                             provider: provider,
                             stream: true
                         })
@@ -110,16 +112,14 @@ export class ChatBot {
 
         await Promise.allSettled(providerPromises);
 
+        
+        socket.emit('done');
+        
         if (fullResponse) {
-            this.conversationHistory.push(
-                { role: "user", content: prompt },
-                { role: "assistant", content: fullResponse }
-            );
+            return fullResponse;
         } else {
             socket.emit('error', 'No provider returned a valid response');
         }
-
-        socket.emit('done');
     }
 }
 
