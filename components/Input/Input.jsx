@@ -56,11 +56,13 @@ const ModelDropdown = ({
       </button>
       {isOpen && (
         <div className="model-dropdown absolute right-0 bottom-full mb-1 sm:mb-2 w-40 sm:w-48 bg-[#212121] border border-[#383838] rounded-lg shadow-lg">
-          {Object.entries(models).map(([key, model]) => (
+          {Object.entries(models).map(([key, model], index, array) => (
             <button
               key={key}
-              type="button" // Add this to explicitly make it a button, not a submit
-              className="block w-full text-left px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#e2e2e2] hover:bg-[#2a2a2a] tracking-[0.05em] sm:tracking-[0.07em] transition-all ease-out"
+              type="button"
+              className={`block w-full text-left px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#e2e2e2] hover:bg-[#2a2a2a] tracking-[0.05em] sm:tracking-[0.07em] transition-all ease-out ${
+                index !== array.length - 1 ? 'border-b border-[#38383845]' : ''
+              }`}
               onClick={(e) => handleModelSelect(e, key)}
             >
               {key}
@@ -90,6 +92,14 @@ const Input = ({
     setMessage(e.target.value);
     adjustTextareaHeight();
   };
+
+  useEffect(() => {
+    const providers = models[selectedModel]?.providers;
+    if (providers) {
+      const firstProviderKey = Object.keys(providers)[0];
+      setSelectedProvider(firstProviderKey);
+    }
+  }, [selectedModel]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -162,13 +172,13 @@ const Input = ({
                 type="button"
                 className="text-[#8e8e8e] transition-all duration-200"
               >
-                <i className="ri-attachment-2 sm:text-xl text-[1.3rem]"></i>
+                <i className="ri-attachment-2 text-[1.4rem]"></i>
               </button>
               <button
                 type="button"
                 className="text-[#8e8e8e] transition-all duration-200"
               >
-                <i className="ri-global-line sm:text-xl text-[1.3rem]"></i>
+                <i className="ri-global-line text-[1.4rem]"></i>
               </button>
             </div>
             <div className="flex items-center sm:space-x-4 space-x-2">

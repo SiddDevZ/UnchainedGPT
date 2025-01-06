@@ -18,20 +18,20 @@ export class ChatBot {
         this.providers = ['Blackbox', 'DarkAI', 'PollinationsAI'];
     }
 
-    async getResponse(socket, model, providers, history) {
+    async getResponse(socket, model, provider, history) {
         
-        this.defaultModel = model || this.defaultModel;
-        this.providers = providers || this.providers;
+        const selectedModel = model || this.defaultModel;
+        const selectedProviders = provider && provider.length > 0 ? provider : this.providers;
 
-        console.log("\n".repeat(40));
+        console.log(selectedModel)
+        console.log(selectedProviders)
 
-        console.log(history)
         let chosenProvider = null;
         let fullResponse = "";
         const abortControllers = new Map();
         let providerEmitted = false;
 
-        const providerPromises = this.providers.map(provider => {
+        const providerPromises = selectedProviders.map(provider => {
             const controller = new AbortController();
             abortControllers.set(provider, controller);
 
@@ -111,15 +111,14 @@ export class ChatBot {
         });
 
         await Promise.allSettled(providerPromises);
-
-        
-        socket.emit('done');
         
         if (fullResponse) {
+            socket.emit('done', fullResponse);
             return fullResponse;
         } else {
             socket.emit('error', 'No provider returned a valid response');
         }
+        socket.emit('done');
     }
 }
 

@@ -208,11 +208,10 @@ const page = () => {
           </Link>
         </div>
         <h1 className="font-inter font-semibold text-center text-4xl">
-          Let's get started
+          Welcome Back
         </h1>
         <h4 className="font-inter text-sm font-medium mt-4 mb-6 tracking-wide leading-5 text-[#cccccc] text-center max-w-[21rem]">
-          You're just One step away from unlocking the full potential of AI.
-          Sign up now!
+          Access your account to explore the limitless possibilities of AI. Log in now!
         </h4>
 
         <div className="flex flex-col gap-4 justify-center w-full">
@@ -221,14 +220,14 @@ const page = () => {
             className="border border-[#acacac] hover:border-white hover:scale-[1.02] transition-all ease-in-out gap-2 flex items-center justify-center text-white font-inter w-full font-medium py-2.5 px-4 rounded-full duration-300"
           >
             <img src="google.svg" className="w-[1.7rem]" alt="" />
-            Sign up with Google
+            Sign in with Google
           </button>
           <button
             onClick={() => handleDiscordLogin()}
             className="border border-[#acacac] hover:border-white hover:scale-[1.02] ease-in-out gap-2 flex items-center justify-center text-white font-inter w-full font-medium py-2.5 px-4 rounded-full transition duration-300"
           >
             <img src="discord.svg" className="w-[1.7rem]" alt="" />
-            Sign up with Discord
+            Sign in with Discord
           </button>
         </div>
         <div className="flex items-center w-[80%] mx-auto my-4">
@@ -272,16 +271,16 @@ const page = () => {
           onClick={handleEmailLogin}
           className="mt-6 hover:scale-[1.02] bg-[#f2f2f2] text-black font-inter w-full font-medium py-3 px-4 rounded-full hover:bg-[#e1e1e1] transition duration-300"
         >
-          Register with Email
+          Login with Email
         </button>
 
         <h5 className="font-inter text-[#cccccc] mt-5">
-          Already have an account?{" "}
+          Don't have an account?{" "}
           <Link
             href="/register"
             className="ml-0.5 hover:underline decoration-[#c1c1c1] text-white"
           >
-            Login
+            Register
           </Link>
         </h5>
       </div>

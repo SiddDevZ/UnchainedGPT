@@ -5,6 +5,7 @@ import "./page.css";
 import Input from "../../components/Input/Input";
 import io from "socket.io-client";
 import Cookies from "js-cookie";
+import models from "./models";
 
 const sampleChatData = [
   {
@@ -47,58 +48,6 @@ const sampleChatData = [
 ];
 
 const Page = () => {
-  const models = {
-    "GPT-4o": {
-      display: "GPT-4o",
-      value: "gpt-4o",
-      providers: {
-        Auto: { display: "Auto", value: "auto" },
-        "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
-        "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
-        "Dark AI": { display: "DarkAI", value: "DarkAI" },
-        Liaobots: { display: "Liaobots", value: "Liaobots" },
-      },
-    },
-    "Claude 3.5 Sonnet": {
-      display: "Claude 3.5",
-      value: "claude-3.5-sonnet",
-      providers: {
-        Auto: { display: "Auto", value: "auto" },
-        "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
-        // "Liaobots": { display: "Liaobots", value: "Liaobots" },
-        "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
-      },
-    },
-    "Qwen 2.5 Coder": {
-      display: "Qwen Coder",
-      value: "qwen-2.5-coder-32b",
-      providers: {
-        Auto: { display: "Auto", value: "auto" },
-        "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
-        PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-        // "GeminiPro": { display: "GeminiPro", value: "GeminiPro" },
-      },
-    },
-    "Evil (Experimental)": {
-      display: "Evil",
-      value: "evil",
-      providers: {
-        Auto: { display: "Auto", value: "auto" },
-        // "Airforce": { display: "Airforce", value: "Airforce" },
-        PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-      },
-    },
-    "LLaMA 3.3 70B": {
-      display: "LLaMA 3.3",
-      value: "llama-3.3-70b",
-      providers: {
-        Auto: { display: "Auto", value: "auto" },
-        "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
-        PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-        Perplexity: { display: "Perplexity", value: "PerplexityLabs" },
-      },
-    },
-  };
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -114,14 +63,17 @@ const Page = () => {
     Object.keys(models[Object.keys(models)[0]].providers)[0]
   );
   const [responseTime, setResponseTime] = useState(null);
-  const [startTime, setStartTime] = useState(null);
+  const startTimeRef = useRef(null);
   const [timeMetaData, setTimeMetaData] = useState({});
   const [messageMetadata, setMessageMetadata] = useState({});
   const latestMetadataRef = useRef(messageMetadata);
   const [chatId, setChatId] = useState(null);
   const [userId, setUserId] = useState(null);
   const [chatData, setChatData] = useState([]);
+  const [animatedTitle, setAnimatedTitle] = useState("");
   const latestChatIdRef = useRef(null);
+  const [userData, setUserData] = useState({});
+  const [copyIndex, setCopyIndex] = useState(null);
 
   useEffect(() => {
     latestChatIdRef.current = chatId;
@@ -133,7 +85,6 @@ const Page = () => {
   };
 
   const fetchAndCategorizeChats = async (userId) => {
-    console.log(userId);
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/fetchchats/${userId}`
@@ -141,7 +92,30 @@ const Page = () => {
       const data = await response.json();
 
       if (data.chats) {
-        setChatData(data.chats);
+        let updatedChats = [...data.chats];
+
+        if (!mounted) {
+          const newChatEntry = {
+            id: `temp`,
+            title: "New chat",
+          };
+
+          const recentCategoryIndex = updatedChats.findIndex(
+            (category) => category.category === "Recent"
+          );
+
+          if (recentCategoryIndex !== -1) {
+            updatedChats[recentCategoryIndex].chats.unshift(newChatEntry);
+          } else {
+            updatedChats.unshift({
+              category: "Recent",
+              chats: [newChatEntry],
+            });
+          }
+        }
+
+        setChatData(updatedChats);
+        console.log("Fetched and categorized chats:", data);
       } else {
         console.error("No chats data received from the server");
         setChatData([]);
@@ -153,11 +127,22 @@ const Page = () => {
   };
 
   const newChat = async () => {
-    setChatId(null);
+    setChatId("temp");
     setMessages([]);
   };
 
+  const handleStopGeneration = async () => {
+    setIsGenerating(false);
+  }
+
   const fetchSpecificChat = async (chatId) => {
+    if (chatId == "temp") {
+      newChat();
+      if (isMobile){
+        toggleSidebar();
+      }
+      return;
+    }
     if (!chatId) {
       console.error("No chat ID provided");
       return;
@@ -179,7 +164,6 @@ const Page = () => {
         if (data.metaData) {
           setMessageMetadata(data.metaData);
         }
-
         if (data.timeData) {
           setTimeMetaData(data.timeData);
         }
@@ -213,6 +197,12 @@ const Page = () => {
           const data = await response.json();
           if (data.valid) {
             setUserId(data.userId);
+            setUserData({
+              avatar: data.avatar,
+              email: data.email,
+              username: data.username,
+            });
+
             await fetchAndCategorizeChats(data.userId);
           } else {
             Cookies.remove("token");
@@ -232,31 +222,60 @@ const Page = () => {
   }, []);
 
   useEffect(() => {
-    if (isGenerating) {
-      setStartTime(Date.now());
-    } else if (startTime) {
+    if (chatData.length > 0 && chatData[0].chats.length > 0) {
+      const firstChatTitle = chatData[0].chats[0].title;
+      let index = 0;
+
+      setAnimatedTitle(""); // Reset the animated title
+
+      const animateTitle = () => {
+        if (index < firstChatTitle.length) {
+          setAnimatedTitle(firstChatTitle.slice(0, index + 1));
+          index++;
+          setTimeout(animateTitle, 50);
+        }
+      };
+
+      animateTitle();
+
+      return () => {
+        // No need to clear interval as we're using setTimeout
+      };
+    }
+  }, [chatData]);
+
+  const startTimer = () => {
+    startTimeRef.current = Date.now();
+  };
+
+  function isValidImageUrl(url) {
+    if (typeof url !== "string") return false;
+
+    if (url.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) !== null) return true;
+
+    if (url.includes("image.pollinations.ai/prompt/")) return true;
+
+    return false;
+  }
+
+  const stopTimer = () => {
+    if (startTimeRef.current) {
       const endTime = Date.now();
-      const time = calculateResponseTime(startTime, endTime);
-      setResponseTime(time);
-      setStartTime(null);
+      const time = calculateResponseTime(startTimeRef.current, endTime);
+      startTimeRef.current = null;
 
       setTimeMetaData((prevTimeMetaData) => {
-        const lastMessageIndex = messages.length - 1;
-        if (lastMessageIndex >= 0) {
-          return {
-            ...prevTimeMetaData,
-            [lastMessageIndex]: time,
-          };
-        }
-        return prevTimeMetaData;
+        const newMessageIndex = messages.length + 1;
+        return {
+          ...prevTimeMetaData,
+          [newMessageIndex]: time,
+        };
       });
-    }
-  }, [isGenerating]);
 
-  useEffect(() => {
-    console.log(selectedModel);
-    console.log(selectedProvider);
-  }, [selectedModel, selectedProvider]);
+      return time;
+    }
+    return null;
+  };
 
   const scrollToBottom = () => {
     if (autoScroll && messagesEndRef.current) {
@@ -297,8 +316,62 @@ const Page = () => {
     }
   }, []);
 
-  const handleSendMessage = (message, selectedModel, selectedProvider) => {
+  const handleCopy = async (messageId) => {
+    const messageToCopy = messages[messageId];
+
+    if (messageToCopy) {
+      try {
+        await navigator.clipboard.writeText(messageToCopy.content);
+        setCopyIndex(messageId);
+
+        setTimeout(() => {
+          setCopyIndex(null);
+        }, 2000);
+      } catch (err) {
+        console.error("Failed to copy message: ", err);
+      }
+    } else {
+      console.error("Message not found");
+    }
+  };
+
+  const handleSendMessage = async (
+    message,
+    selectedModel,
+    selectedProvider
+  ) => {
     setIsGenerating(true);
+    startTimer();
+
+    let currentChatId = latestChatIdRef.current;
+
+    if (!currentChatId) {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/chat`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              prompt: message,
+              user_id: userId,
+            }),
+          }
+        );
+        const data = await response.json();
+        currentChatId = data.chat_id;
+        setChatId(currentChatId);
+        latestChatIdRef.current = currentChatId;
+
+        fetchAndCategorizeChats(userId);
+      } catch (error) {
+        console.error("Error creating new chat:", error);
+        setIsGenerating(false);
+        return;
+      }
+    }
 
     let providers;
     if (selectedProvider === "Auto") {
@@ -315,17 +388,29 @@ const Page = () => {
       { role: "user", content: message },
     ]);
 
-    let generatedContent = "";
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: {
+          index: messages.length + 1,
+          role: "user",
+          content: message,
+        },
+      }),
+    });
 
+    let generatedContent = "";
     socket.emit("message", {
       message,
       model: models[selectedModel].value,
       provider: providers,
-      chatId: latestChatIdRef.current,
+      chatId: latestChatIdRef.current || "none",
     });
 
     socket.on("requestHistory", (chatIde) => {
-
       const filteredMessages = messages.map(({ role, content }) => ({
         role,
         content,
@@ -335,8 +420,8 @@ const Page = () => {
     });
 
     socket.on("requestChatId", () => {
-      console.log("chatid: ",  latestChatIdRef.current)
-      socket.emit("provideChatId", { chatId:  latestChatIdRef.current });
+      console.log("chatid: ", latestChatIdRef.current);
+      socket.emit("provideChatId", { chatId: latestChatIdRef.current });
     });
 
     socket.on("chunk", (chunk) => {
@@ -345,8 +430,11 @@ const Page = () => {
       scrollToBottom();
     });
 
+    socket.on("chatTitleUpdated", () => {
+      fetchAndCategorizeChats(userId);
+    });
+
     const provider = null;
-    console.log(provider);
 
     socket.on("prov", (provider) => {
       const newMessageIndex = messages.length + 1;
@@ -360,12 +448,15 @@ const Page = () => {
       });
     });
 
-    socket.on("done", async () => {
+    socket.on("done", async (fullResponse) => {
       setIsGenerating(false);
+      if (fullResponse == null) {
+        fullResponse = "";
+      }
       const newMessages = [
         ...messages,
         { role: "user", content: message },
-        { role: "assistant", content: generatedContent },
+        { role: "assistant", content: fullResponse },
       ];
       setMessages(newMessages);
       setGeneratingMessage({});
@@ -373,69 +464,38 @@ const Page = () => {
       scrollToBottom();
 
       try {
-        // Only proceed if generatedContent is not empty
-        if (generatedContent.trim() !== "") {
-          let currentChatId = chatId;
-          if (!currentChatId) {
-            const response = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/chat`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  title:
-                    newMessages[newMessages.length - 1].content.substring(
-                      0,
-                      20
-                    ) + "...",
-                  user_id: userId,
-                }),
-              }
-            );
-            console.log("Created new chat:");
-            const data = await response.json();
-            currentChatId = data.chat_id;
-            setChatId(currentChatId);
-          }
-          // Store messages in the backend
-          await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                messages: [
-                  {
-                    index: newMessages.length - 1,
-                    role: newMessages[newMessages.length - 2].role,
-                    content: newMessages[newMessages.length - 2].content,
-                    timeItTook: timeMetaData[newMessages.length - 1],
-                  },
-                  {
-                    index: newMessages.length,
-                    role: newMessages[newMessages.length - 1].role,
-                    content: newMessages[newMessages.length - 1].content,
-                    model:
-                      latestMetadataRef.current[newMessages.length - 1]?.model,
-                    provider:
-                      latestMetadataRef.current[newMessages.length - 1]
-                        ?.provider,
-                    timeItTook: timeMetaData[newMessages.length],
-                  },
-                ],
-              }),
-            }
-          );
+        let currentChatId = latestChatIdRef.current;
+        let content = newMessages[newMessages.length - 1].content;
+        if (content == undefined || content.trim() === "") {
+          content = "";
         }
+
+        const time = stopTimer();
+
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message: {
+                index: newMessages.length,
+                role: newMessages[newMessages.length - 1].role,
+                content: newMessages[newMessages.length - 1].content,
+                model: latestMetadataRef.current[newMessages.length - 1]?.model,
+                provider:
+                  latestMetadataRef.current[newMessages.length - 1]?.provider,
+                timeItTook: time,
+              },
+            }),
+          }
+        );
       } catch (error) {
         console.error("Error storing chat or messages:", error);
       }
 
-      // Remove the listeners to avoid duplicates on next message
       socket.off("chunk");
       socket.off("done");
       socket.off("prov");
@@ -443,8 +503,6 @@ const Page = () => {
       socket.off("requestChatId");
     });
   };
-
-  // Add this useEffect to handle real-time updates of the generating message
 
   useLayoutEffect(() => {
     const checkScreenSize = () => {
@@ -475,7 +533,6 @@ const Page = () => {
 
   return (
     <div className="flex w-full h-screen bg-[#121212] relative">
-      {/* Sidebar */}
       <div
         className={`
           h-full bg-[#212121] w-[17.5rem] flex-shrink-0 flex flex-col
@@ -507,30 +564,32 @@ const Page = () => {
             className="font-medium flex items-center space-x-2 w-full hover:bg-[#383838] px-2.5 py-1 rounded-lg transition-all"
           >
             <i className="ri-chat-new-line text-[#e2e2e2] text-xl"></i>
-            <span className="text-[#e2e2e2] font-semibold">New Chat</span>
+            <span className="text-[#e2e2e2] font-medium">New Chat</span>
           </button>
         </div>
         <div className="flex-1 overflow-hidden border-t border-[#414141]">
           <div className="h-full overflow-y-auto px-2 py-3">
-            {chatData.map(({ category, chats }) => (
+            {chatData.map(({ category, chats }, categoryIndex) => (
               <div key={category} className="mb-4">
                 <h6 className="text-[#8e8e8e] text-xs font-medium mb-2 px-2.5 tracking-wider">
                   {category}
                 </h6>
-                {chats.map((chat) => (
+                {chats.map((chat, chatIndex) => (
                   <button
                     key={chat.id}
                     onClick={() => fetchSpecificChat(chat.id)}
                     className="w-full mb-0.5 text-left px-2.5 py-1.5 rounded-lg 
-                               hover:bg-gradient-to-r hover:from-[#383838] hover:to-[#2a2a2a] 
-                               transition-all duration-300 ease-in-out 
-                               group relative overflow-hidden"
+                         hover:bg-gradient-to-r hover:from-[#383838] hover:to-[#2a2a2a] 
+                         transition-all duration-300 ease-in-out 
+                         group relative overflow-hidden"
                   >
                     <span
                       className="text-[#e6e6e6] group-hover:text-white text-[0.96rem] whitespace-nowrap overflow-hidden text-ellipsis block
-                                      transition-colors duration-300"
+                           transition-colors duration-300"
                     >
-                      {chat.title}
+                      {categoryIndex === 0 && chatIndex === 0
+                        ? animatedTitle
+                        : chat.title}
                     </span>
                     <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#212121] group-hover:from-[#2a2a2a] to-transparent"></div>
                   </button>
@@ -545,18 +604,16 @@ const Page = () => {
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img
-                    src="https://cdn.discordapp.com/avatars/273352781442842624/438d2199d43d5989d4dcd7772f13f835.png"
+                    src={userData.avatar}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div>
                   <h3 className="text-[#e2e2e2] font-semibold text-sm">
-                    Siddharth
+                    {userData.username}
                   </h3>
-                  <h5 className="text-[#8e8e8e] text-xs">
-                    siddz.dev@gmail.com
-                  </h5>
+                  <h5 className="text-[#8e8e8e] text-xs">{userData.email}</h5>
                 </div>
               </div>
               <button className="text-[#8e8e8e] hover:text-[#e2e2e2] transition-colors">
@@ -599,7 +656,7 @@ const Page = () => {
                       <div className="flex items-center space-x-2">
                         <i className="ri-ai-generate text-[#c69326] text-lg"></i>
                         <span className="text-[#a0a0a0] font-semibold">
-                          GPT-4
+                          GPT-4o
                         </span>
                         <span className="text-[#8e8e8e] text-xs">
                           with Pollinations AI
@@ -619,7 +676,15 @@ const Page = () => {
                     <div className="p-4 bg-gradient-to-b from-[#212121] to-[#1a1a1a]">
                       <div className="space-y-2 message-container">
                         <div className="text-sm font-inter md:text-base text-[#e2e2e2] leading-relaxed">
-                          Hello Siddharth! How can I assist you today?
+                          Hello{" "}
+                          {userData && userData.username
+                            ? userData.username
+                                .split(" ")[0]
+                                .charAt(0)
+                                .toUpperCase() +
+                              userData.username.split(" ")[0].slice(1)
+                            : "there"}
+                          ! How can I assist you today?
                         </div>
                       </div>
                     </div>
@@ -637,7 +702,7 @@ const Page = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[95%] md:max-w-[85%] rounded-lg transition-all mr-auto">
+                      <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[95%] md:max-w-[85%] rounded-lg transition-all mr-auto min-w-[350px]">
                         <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] rounded-lg shadow-lg overflow-hidden border border-[#3a3a3a]">
                           {/* Model information */}
                           <div className="bg-gradient-to-r from-[#2a2a2a] to-[#252525] text-[#8e8e8e] text-xs font-medium py-2 px-4 flex items-center justify-between">
@@ -668,7 +733,7 @@ const Page = () => {
                                 Tokens: 150
                               </span> */}
                               <span className="text-[#8e8e8e] text-xs">
-                                Time: {timeMetaData[index]}
+                                Time: {timeMetaData[index]}s
                               </span>
                             </div>
                           </div>
@@ -677,11 +742,22 @@ const Page = () => {
                           <div className="p-4 bg-gradient-to-b from-[#212121] to-[#1a1a1a]">
                             <div className="space-y-2 message-container">
                               <div className="text-sm font-inter md:text-base text-[#e2e2e2] leading-relaxed">
-                                {message.content === "" ? (
+                                {message.content.trim().length === 0 ||
+                                message.content == undefined ? (
                                   <span className="text-[#ef4444]">
                                     Error: No response received. Please try with
                                     a different model.
                                   </span>
+                                ) : isValidImageUrl(message.content) ? (
+                                  <img
+                                    src={message.content}
+                                    alt="Generated Image"
+                                    className="w-full md:max-w-[24rem] rounded-lg"
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src = "/placeholder-image.png";
+                                    }}
+                                  />
                                 ) : (
                                   message.content
                                 )}
@@ -693,8 +769,17 @@ const Page = () => {
                     )}
                     {/* Copy button */}
                     {message.role === "assistant" && (
-                      <button className="animate-in group cursor-pointer p-1.5 flex items-center w-fit -mt-4">
-                        <i className="ri-file-copy-line text-[#8e8e8e] group-hover:text-[#c1c1c1] transition-all"></i>
+                      <button
+                        onClick={() => handleCopy(index)}
+                        className="animate-in group cursor-pointer p-1.5 flex items-center w-fit -mt-4"
+                      >
+                        <i
+                          className={`${
+                            index == copyIndex
+                              ? "ri-check-fill"
+                              : "ri-file-copy-line"
+                          } text-[#8e8e8e] group-hover:text-[#c1c1c1] transition-all`}
+                        ></i>
                         <span className="text-xs md:text-sm ml-1.5 text-[#8e8e8e] group-hover:text-[#c1c1c1] transition-all">
                           Copy
                         </span>
@@ -759,6 +844,7 @@ const Page = () => {
               selectedProvider={selectedProvider}
               setSelectedProvider={setSelectedProvider}
               isGenerating={isGenerating}
+              handleStopGeneration={handleStopGeneration}
             />
           </div>
         </div>
