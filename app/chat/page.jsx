@@ -115,7 +115,7 @@ const Page = () => {
         }
 
         setChatData(updatedChats);
-        console.log("Fetched and categorized chats:", data);
+        // console.log("Fetched and categorized chats:", data);
       } else {
         console.error("No chats data received from the server");
         setChatData([]);
@@ -296,7 +296,7 @@ const Page = () => {
   useEffect(() => {
     // Ensure this runs only on the client side
     if (typeof window !== "undefined") {
-      const newSocket = io("http://localhost:3001", {
+      const newSocket = io("https://siddz-ai.onrender.com", {
         path: "/socket.io",
         transports: ["websocket", "polling"],
       });
@@ -345,6 +345,11 @@ const Page = () => {
 
     let currentChatId = latestChatIdRef.current;
 
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { role: "user", content: message },
+    ]);
+
     if (!currentChatId) {
       try {
         const response = await fetch(
@@ -382,11 +387,6 @@ const Page = () => {
     } else {
       providers = [models[selectedModel].providers[selectedProvider].value];
     }
-
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { role: "user", content: message },
-    ]);
 
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`, {
       method: "POST",
