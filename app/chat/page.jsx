@@ -470,8 +470,6 @@ const Page = () => {
       fetchAndCategorizeChats(userId);
     });
 
-    const provider = null;
-
     socket.on("prov", (provider) => {
       const newMessageIndex = messages.length + 1;
       setMessageMetadata((prevMetadata) => {
@@ -537,6 +535,7 @@ const Page = () => {
       socket.off("prov");
       socket.off("requestHistory");
       socket.off("requestChatId");
+      socket.off("chatTitleUpdated")
     });
   };
 
