@@ -11,8 +11,12 @@ router.post('/:chatId', async (c) => {
     return c.json({ error: 'Invalid message format. Expected a single message object.' }, 400)
   }
 
-  if (!message.role || !message.content || typeof message.index !== 'number') {
+  if (!message.role || typeof message.index !== 'number') {
     return c.json({ error: 'Missing required fields in message' }, 400)
+  }
+  
+  if (message.content) {
+    message.content = message.content.trimEnd();
   }
 
   try {
@@ -30,7 +34,7 @@ router.post('/:chatId', async (c) => {
     const newMessage = {
       message_id: message.index,
       role: message.role,
-      content: conentMessage,
+      content: conentMessage || "",
     }
 
     // Add additional fields for AI messages

@@ -6,46 +6,12 @@ import Input from "../../components/Input/Input";
 import io from "socket.io-client";
 import Cookies from "js-cookie";
 import models from "./models";
-
-const sampleChatData = [
-  {
-    category: "Recent",
-    chats: [
-      "AI Ethics Discussion",
-      "Python Debugging Help aaaaaaaaaaaaaa",
-      "Book Recommendations",
-    ],
-  },
-  {
-    category: "Previous 7 days",
-    chats: [
-      "Machine Learning Project Ideas",
-      "JavaScript Best Practices",
-      "Quantum Computing Basics",
-      "Sustainable Energy Solutions",
-    ],
-  },
-  {
-    category: "Previous 30 days",
-    chats: [
-      "Blockchain Technology Overview",
-      "Healthy Meal Planning",
-      "Space Exploration Updates",
-      "Cybersecurity Tips",
-      "Art History Timeline",
-    ],
-  },
-  {
-    category: "2024",
-    chats: [
-      "New Year Resolutions",
-      "Future of Work Trends",
-      "Emerging Technologies 2024",
-      "Climate Change Mitigation Strategies",
-      "Global Economic Outlook",
-    ],
-  },
-];
+import { useRouter } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const Page = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -74,6 +40,23 @@ const Page = () => {
   const latestChatIdRef = useRef(null);
   const [userData, setUserData] = useState({});
   const [copyIndex, setCopyIndex] = useState(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useParams();
+  const [isToggling, setIsToggling] = useState(false);
+  const [isWebActive, setIsWebActive] = useState(false);
+
+  useEffect(() => {
+    const chatIdFromUrl = params?.chatId || pathname.split("/").pop();
+    if (chatIdFromUrl && chatIdFromUrl !== "chat") {
+      setChatId(chatIdFromUrl);
+      fetchSpecificChat(chatIdFromUrl);
+    }
+  }, []);
+
+  const handleSetWebActive = () => {
+    setIsWebActive(!isWebActive);
+  }
 
   useEffect(() => {
     latestChatIdRef.current = chatId;
@@ -129,23 +112,23 @@ const Page = () => {
   const newChat = async () => {
     setChatId(null);
     setMessages([]);
+    window.history.pushState({}, "", `/chat`);
 
     const newChatEntry = {
-      id: 'temp',
-      title: 'New chat',
+      id: "temp",
+      title: "New chat",
     };
-  
+
     // Update the chatData state
-    setChatData(prevChatData => {
+    setChatData((prevChatData) => {
       let updatedChats = [...prevChatData];
       const recentCategoryIndex = updatedChats.findIndex(
         (category) => category.category === "Recent"
       );
-  
-      if (recentCategoryIndex !== -1) {
 
+      if (recentCategoryIndex !== -1) {
         const newChatExists = updatedChats[recentCategoryIndex].chats.some(
-          chat => chat.id === 'temp' && chat.title === 'New chat'
+          (chat) => chat.id === "temp" && chat.title === "New chat"
         );
 
         if (!newChatExists) {
@@ -157,11 +140,11 @@ const Page = () => {
           chats: [newChatEntry],
         });
       }
-  
+
       console.log(updatedChats);
       return updatedChats;
     });
-  
+
     if (isMobile) {
       toggleSidebar();
     }
@@ -169,18 +152,19 @@ const Page = () => {
 
   const handleStopGeneration = async () => {
     setIsGenerating(false);
-  }
+  };
 
   const fetchSpecificChat = async (chatId) => {
-    if (chatId == "temp") {
+    if (chatId === latestChatIdRef.current) {
+      return; // Don't fetch if it's the same chat
+    }
+
+    if (chatId === "temp") {
       newChat();
-      if (isMobile){
+      if (isMobile) {
         toggleSidebar();
       }
-      return;
-    }
-    if (!chatId) {
-      console.error("No chat ID provided");
+      window.history.pushState({}, "", `/chat`);
       return;
     }
 
@@ -195,7 +179,12 @@ const Page = () => {
 
       if (data) {
         setMessages(data.messages || []);
+        console.log(data.messages);
         setChatId(chatId);
+        latestChatIdRef.current = chatId;
+
+        // Update URL without full page reload
+        window.history.pushState({}, "", `/chat/${chatId}`);
 
         if (data.metaData) {
           setMessageMetadata(data.metaData);
@@ -333,6 +322,7 @@ const Page = () => {
     // Ensure this runs only on the client side
     if (typeof window !== "undefined") {
       const newSocket = io("https://siddz-ai.onrender.com", {
+        // const newSocket = io("http://localhost:3001", {
         path: "/socket.io",
         transports: ["websocket", "polling"],
       });
@@ -487,6 +477,11 @@ const Page = () => {
       if (fullResponse == null) {
         fullResponse = "";
       }
+
+      if (fullResponse) {
+        fullResponse = fullResponse.trimEnd();
+      }
+
       const newMessages = [
         ...messages,
         { role: "user", content: message },
@@ -535,7 +530,7 @@ const Page = () => {
       socket.off("prov");
       socket.off("requestHistory");
       socket.off("requestChatId");
-      socket.off("chatTitleUpdated")
+      socket.off("chatTitleUpdated");
     });
   };
 
@@ -563,6 +558,7 @@ const Page = () => {
   }, []);
 
   const toggleSidebar = () => {
+    setIsToggling(true);
     setIsSidebarOpen(!isSidebarOpen);
   };
 
@@ -571,7 +567,7 @@ const Page = () => {
       <div
         className={`
           h-full bg-[#212121] w-[17.5rem] flex-shrink-0 flex flex-col
-          ${mounted ? "transition-all duration-300 ease-in-out" : ""}
+          ${isToggling ? "transition-all duration-300 ease-in-out" : ""}
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
           ${isMobile ? "fixed left-0 top-0 z-40" : ""}
         `}
@@ -612,6 +608,7 @@ const Page = () => {
                 {chats.map((chat, chatIndex) => (
                   <button
                     key={chat.id}
+                    // href={`/chat/${chat.id}`}
                     onClick={() => fetchSpecificChat(chat.id)}
                     className="w-full mb-0.5 text-left px-2.5 py-1.5 rounded-lg 
                          hover:bg-gradient-to-r hover:from-[#383838] hover:to-[#2a2a2a] 
@@ -745,14 +742,23 @@ const Page = () => {
                               {messageMetadata[index] ? (
                                 <>
                                   <i className="ri-ai-generate text-[#c69326] text-lg"></i>
-                                  <div className="metadata space-x-2">
-                                    <span className="text-[#a0a0a0] font-semibold">
-                                      {messageMetadata[index].model}
-                                    </span>
-                                    <span className="text-[#8e8e8e] text-xs">
-                                      with {messageMetadata[index].provider}
-                                    </span>
-                                  </div>
+                                  {messageMetadata[index] &&
+                                    (messageMetadata[index].model ||
+                                      messageMetadata[index].provider) && (
+                                      <div className="metadata space-x-2">
+                                        {messageMetadata[index].model && (
+                                          <span className="text-[#a0a0a0] font-semibold">
+                                            {messageMetadata[index].model}
+                                          </span>
+                                        )}
+                                        {messageMetadata[index].provider && (
+                                          <span className="text-[#8e8e8e] text-xs">
+                                            with{" "}
+                                            {messageMetadata[index].provider}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
                                 </>
                               ) : (
                                 <>
@@ -794,7 +800,69 @@ const Page = () => {
                                     }}
                                   />
                                 ) : (
-                                  message.content
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                      code({
+                                        node,
+                                        inline,
+                                        className,
+                                        children,
+                                        ...props
+                                      }) {
+                                        const match = /language-(\w+)/.exec(
+                                          className || ""
+                                        );
+                                        return !inline && match ? (
+                                          <div className="code-block">
+                                            <div className="code-header">
+                                              <div className="code-language">
+                                                <i className="ri-code-line"></i>
+                                                <span>
+                                                  {match[1]
+                                                    .charAt(0)
+                                                    .toUpperCase() +
+                                                    match[1].slice(1)}
+                                                </span>
+                                              </div>
+                                              <button
+                                                onClick={() => {
+                                                  navigator.clipboard.writeText(
+                                                    String(children)
+                                                  );
+                                                  // You can add a toast notification here
+                                                }}
+                                                className="copy-button"
+                                              >
+                                                <span>Copy</span>
+                                              </button>
+                                            </div>
+                                            <SyntaxHighlighter
+                                              style={vscDarkPlus}
+                                              language={match[1]}
+                                              PreTag="div"
+                                              {...props}
+                                            >
+                                              {String(children).replace(
+                                                /\n$/,
+                                                ""
+                                              )}
+                                            </SyntaxHighlighter>
+                                          </div>
+                                        ) : (
+                                          <code
+                                            className={className}
+                                            {...props}
+                                          >
+                                            {children}
+                                          </code>
+                                        );
+                                      },
+                                    }}
+                                    className="zenos-markdown-content"
+                                  >
+                                    {message.content}
+                                  </ReactMarkdown>
                                 )}
                               </div>
                             </div>
@@ -830,14 +898,21 @@ const Page = () => {
                       <div className="bg-gradient-to-r from-[#2a2a2a] to-[#252525] text-[#8e8e8e] text-xs font-medium py-2 px-4 flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <i className="ri-ai-generate text-[#c69326] text-lg"></i>
-                          {messageMetadata[messages.length] ? (
+                          {messageMetadata[messages.length] &&
+                          (messageMetadata[messages.length].model ||
+                            messageMetadata[messages.length].provider) ? (
                             <div className="metadata space-x-2">
-                              <span className="text-[#a0a0a0] font-semibold">
-                                {messageMetadata[messages.length].model}
-                              </span>
-                              <span className="text-[#8e8e8e] text-xs">
-                                with {messageMetadata[messages.length].provider}
-                              </span>
+                              {messageMetadata[messages.length].model && (
+                                <span className="text-[#a0a0a0] font-semibold">
+                                  {messageMetadata[messages.length].model}
+                                </span>
+                              )}
+                              {messageMetadata[messages.length].provider && (
+                                <span className="text-[#8e8e8e] text-xs">
+                                  with{" "}
+                                  {messageMetadata[messages.length].provider}
+                                </span>
+                              )}
                             </div>
                           ) : (
                             <span className="text-[#8e8e8e] font-semibold">
@@ -880,6 +955,8 @@ const Page = () => {
               setSelectedProvider={setSelectedProvider}
               isGenerating={isGenerating}
               handleStopGeneration={handleStopGeneration}
+              isWebActive={isWebActive}
+              handleSetWebActive={handleSetWebActive}
             />
           </div>
         </div>

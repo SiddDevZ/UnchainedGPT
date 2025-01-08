@@ -82,6 +82,8 @@ const Input = ({
   setSelectedProvider,
   models,
   isGenerating,
+  isWebActive,
+  handleSetWebActive,
 }) => {
   const [message, setMessage] = useState("");
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -167,12 +169,13 @@ const Input = ({
           </div>
 
           <div className="flex items-center px-4 py-2 border-t border-[#383838] sm:space-x-8 space-x-4">
-            <div className="flex items-center sm:space-x-4 space-x-4">
+            <div className="flex items-center sm:space-x-4 space-x-4 z-10">
               <button
                 type="button"
+                onClick={() => console.log("hi")}
                 className="text-[#8e8e8e] transition-all duration-200"
               >
-                <i className="ri-attachment-2 text-[1.4rem]"></i>
+                <i className={`ri-attachment-2 ${isWebActive ? "text-blue-500" : ""} text-[1.4rem]`}></i>
               </button>
               <button
                 type="button"

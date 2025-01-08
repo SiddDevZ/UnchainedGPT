@@ -6,7 +6,7 @@ const models = {
       Auto: { display: "Auto", value: "auto" },
       "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
       "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
-      "Dark AI": { display: "DarkAI", value: "DarkAI" },
+    //   "Dark AI": { display: "DarkAI", value: "DarkAI" },
       Liaobots: { display: "Liaobots", value: "Liaobots" },
     },
   },
