@@ -11,6 +11,7 @@ import { useParams, usePathname } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { Toaster, toast } from "sonner";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const Page = () => {
@@ -830,7 +831,7 @@ const Page = () => {
                                                   navigator.clipboard.writeText(
                                                     String(children)
                                                   );
-                                                  // You can add a toast notification here
+                                                  toast.success("Code copied to clipboard!", {position: 'top-right'});
                                                 }}
                                                 className="copy-button"
                                               >
@@ -969,6 +970,7 @@ const Page = () => {
           onClick={toggleSidebar}
         ></div>
       )}
+      <Toaster richColors theme="dark" />
     </div>
   );
 };
