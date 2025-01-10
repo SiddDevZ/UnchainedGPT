@@ -735,7 +735,7 @@ const Page = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[95%] md:max-w-[85%] rounded-lg transition-all mr-auto min-w-[350px]">
+                      <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[92vw] md:max-w-[85%] rounded-lg transition-all mr-auto sm:min-w-[350px]">
                         <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] rounded-lg shadow-lg overflow-hidden border border-[#3a3a3a]">
                           {/* Model information */}
                           <div className="bg-gradient-to-r from-[#2a2a2a] to-[#252525] text-[#8e8e8e] text-xs font-medium py-2 px-4 flex items-center justify-between">
