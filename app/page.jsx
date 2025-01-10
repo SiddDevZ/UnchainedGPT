@@ -225,7 +225,7 @@ export function Home() {
                   Get Started for free
                 </button>
               </Link>
-              <Link href="/try">
+              <Link href="/register">
                 <button className="md:px-6 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-white xss:text-[1rem] border border-[#838383] bg-black text-btn transition-all ease-in-out rounded-md ">
                   Try it out
                 </button>
@@ -432,9 +432,9 @@ export function Home() {
                 text, everything you need is just a click away.
               </p>
               {/* <RainbowButton>Get Started for free</RainbowButton> */}
-              <button className="md:px-6 z-10 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md ">
+              <Link href="/register" className="md:px-6 z-10 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md ">
                 Get Started for free
-              </button>
+              </Link>
             </div>
           </div>
           <Footer />
