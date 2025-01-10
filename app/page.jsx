@@ -233,11 +233,11 @@ export function Home() {
             </div>
 
             <div className="relative hero-animate hero-animate-delay-1 relativee back my-32 flex h-[500px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border-2 bg-background">
-              {/* <img
-                src="https://i.imgur.com/RXBEJz2.png"
+              <img
+                src="https://i.imgur.com/OmNuaFU.png"
                 alt="Background"
                 className="absolute inset-0 w-full h-full object-cover"
-              /> */}
+              />
               <BorderBeam
                 size={250}
                 colorFrom={"#e98c00ad"}
