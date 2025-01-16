@@ -76,7 +76,7 @@ const models = {
     value: "midjourney",
     providers: {
       Auto: { display: "Auto", value: "auto" },
-      Airforce: { display: "Airforce", value: "Airforce" },
+      // Airforce: { display: "Airforce", value: "Airforce" },
       PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
     },
   },

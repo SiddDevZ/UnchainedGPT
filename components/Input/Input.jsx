@@ -172,6 +172,7 @@ const Input = ({
             <div className="flex items-center sm:space-x-4 space-x-4 z-10">
               <button
                 type="button"
+                onClick={() => handleSetWebActive()}
                 className="text-[#8e8e8e] transition-all duration-200"
               >
                 <i className={`ri-attachment-2 text-[1.4rem]`}></i>

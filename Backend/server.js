@@ -63,6 +63,8 @@ io.on("connection", (socket) => {
   socket.on("message", async ({ message, model, provider, chatId }) => {
     // console.log(provider)
     // console.log(conversationHistories)
+    // console.log(message)
+    // console.log(chatId)
     if (!chatId) {
       socket.emit("error", "Chat ID is required");
       return;
@@ -118,6 +120,7 @@ io.on("connection", (socket) => {
           "Error: failed to generate response. Try with another model or provider.";
       }
       history.push({ role: "assistant", content: fullResponse });
+      // console.log(fullResponse)
 
       conversationHistories.set(chatId, history);
     } catch (error) {

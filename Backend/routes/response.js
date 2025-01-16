@@ -19,100 +19,55 @@ export class ChatBot {
     }
 
     async getResponse(socket, model, provider, history) {
-        
         const selectedModel = model || this.defaultModel;
         const selectedProviders = provider && provider.length > 0 ? provider : this.providers;
-
-        console.log(selectedModel)
-        console.log(selectedProviders)
-
-        let chosenProvider = null;
+    
+        console.log(selectedModel);
+        console.log(selectedProviders);
+    
         let fullResponse = "";
-        const abortControllers = new Map();
-        let providerEmitted = false;
-
-        const providerPromises = selectedProviders.map(provider => {
-            const controller = new AbortController();
-            abortControllers.set(provider, controller);
-
-            return (async () => {
-                try {
-                    const response = await fetch('https://chat-api-rp7a.onrender.com/v1/chat/completions', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'text/event-stream'
-                        },
-                        signal: controller.signal,
-                        body: JSON.stringify({
-                            model: this.defaultModel,
-                            messages: history,
-                            provider: provider,
-                            stream: true
-                        })
-                    });
-
-                    if (!response.ok) return null;
-
-                    let isFirstChunk = true;
-                    for await (const chunk of response.body) {
-                        if (chosenProvider && chosenProvider !== provider) {
-                            controller.abort();
-                            return null;
-                        }
-
-                        const text = new TextDecoder().decode(chunk);
-                        const lines = text.split('\n');
-
-                        for (const line of lines) {
-                            if (!line.trim() || line === 'data: [DONE]') continue;
-
-                            try {
-                                const jsonStr = line.replace(/^data: /, '');
-                                const parsed = JSON.parse(jsonStr);
-                                const content = parsed.choices?.[0]?.delta?.content;
-
-                                if (content) {
-                                    if (isFirstChunk) {
-                                        isFirstChunk = false;
-                                        if (!chosenProvider) {
-                                            chosenProvider = provider;
-                                            if (!providerEmitted) {
-                                                socket.emit('prov', provider);
-                                                providerEmitted = true;
-                                            }
-                                            for (const [otherProvider, ctrl] of abortControllers) {
-                                                if (otherProvider !== provider) {
-                                                    ctrl.abort();
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (provider === chosenProvider) {
-                                        socket.emit('chunk', content);
-                                        fullResponse += content;
-                                    }
-                                }
-                            } catch (e) {
-                                continue;
-                            }
-                        }
-                    }
-                    return provider;
-                } catch (error) {
-                    if (error.name === 'AbortError') {
-                        return null;
-                    }
-                    console.error(`Error with ${provider}:`, error);
-                    return null;
-                }
-            })();
+    
+        const providerPromises = selectedProviders.map(async (provider) => {
+            try {
+                const response = await fetch('https://chat-api-rp7a.onrender.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: selectedModel,
+                        messages: history,
+                        provider: provider,
+                        stream: false
+                    })
+                });
+    
+                if (!response.ok) return null;
+    
+                const data = await response.json();
+                return data.choices[0]?.message?.content || null;
+            } catch (error) {
+                console.error(`Error with ${provider}:`, error);
+                return null;
+            }
         });
-
-        await Promise.allSettled(providerPromises);
+    
+        const results = await Promise.all(providerPromises);
+        
+        for (let i = 0; i < results.length; i++) {
+            if (results[i]) {
+                fullResponse = results[i];
+                socket.emit('prov', selectedProviders[i]);
+                break;
+            }
+        }
+    
+        console.log("fullResponse: ", fullResponse);
         
         if (fullResponse) {
+            console.log("eeee: ", fullResponse);
+            socket.emit('chunk', fullResponse);
             socket.emit('done', fullResponse);
             return fullResponse;
         } else {

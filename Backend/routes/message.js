@@ -7,7 +7,7 @@ router.post('/:chatId', async (c) => {
   const chatId = c.req.param('chatId')
   const { message } = await c.req.json()
 
-  if (!message || typeof message !== 'object') {
+  if (!message || !message.content || typeof message !== 'object') {
     return c.json({ error: 'Invalid message format. Expected a single message object.' }, 400)
   }
 

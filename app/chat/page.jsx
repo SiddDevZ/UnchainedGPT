@@ -3,6 +3,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import "remixicon/fonts/remixicon.css";
 import "./page.css";
 import Input from "../../components/Input/Input";
+import { CodeBlock } from "../../components/ui/code-block"
 import io from "socket.io-client";
 import Cookies from "js-cookie";
 import models from "./models";
@@ -25,7 +26,7 @@ const Page = () => {
   const messagesRef = useRef();
   const [autoScroll, setAutoScroll] = useState(true);
   const messagesEndRef = useRef(null);
-  const [selectedModel, setSelectedModel] = useState(Object.keys(models)[0]);
+  const [selectedModel, setSelectedModel] = useState(Object.keys(models)[1]);
   const [selectedProvider, setSelectedProvider] = useState(
     Object.keys(models[Object.keys(models)[0]].providers)[0]
   );
@@ -56,7 +57,8 @@ const Page = () => {
   }, []);
 
   const handleSetWebActive = () => {
-    setIsWebActive(!isWebActive);
+    // setIsWebActive(!isWebActive);
+    toast.warning("This feature is not available currently.", {position: "top-right"}); 
   }
 
   useEffect(() => {
@@ -430,6 +432,7 @@ const Page = () => {
     });
 
     let generatedContent = "";
+    console.log(message, models[selectedModel].value, providers);
     socket.emit("message", {
       message,
       model: models[selectedModel].value,
@@ -475,6 +478,7 @@ const Page = () => {
 
     socket.on("done", async (fullResponse) => {
       setIsGenerating(false);
+      // console.log("Generated content:", fullResponse);
       if (fullResponse == null) {
         fullResponse = "";
       }
@@ -815,41 +819,11 @@ const Page = () => {
                                           className || ""
                                         );
                                         return !inline && match ? (
-                                          <div className="code-block">
-                                            <div className="code-header">
-                                              <div className="code-language">
-                                                <i className="ri-code-line"></i>
-                                                <span>
-                                                  {match[1]
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                    match[1].slice(1)}
-                                                </span>
-                                              </div>
-                                              <button
-                                                onClick={() => {
-                                                  navigator.clipboard.writeText(
-                                                    String(children)
-                                                  );
-                                                  toast.success("Code copied to clipboard!", {position: 'top-right'});
-                                                }}
-                                                className="copy-button"
-                                              >
-                                                <span>Copy</span>
-                                              </button>
-                                            </div>
-                                            <SyntaxHighlighter
-                                              style={vscDarkPlus}
-                                              language={match[1]}
-                                              PreTag="div"
-                                              {...props}
-                                            >
-                                              {String(children).replace(
-                                                /\n$/,
-                                                ""
-                                              )}
-                                            </SyntaxHighlighter>
-                                          </div>
+                                          <CodeBlock
+                                            language={match[1]}
+                                            filename={`${match[1].charAt(0).toUpperCase() + match[1].slice(1)} Code`}
+                                            code={String(children).replace(/\n$/, "")}
+                                          />
                                         ) : (
                                           <code
                                             className={className}
