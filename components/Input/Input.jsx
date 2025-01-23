@@ -134,6 +134,10 @@ const Input = ({
 
   useEffect(() => {
     adjustTextareaHeight();
+    // Focus the textarea after component mounts
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
   }, [message]);
 
   return (

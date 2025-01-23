@@ -49,8 +49,8 @@ const models = {
     //   Perplexity: { display: "Perplexity", value: "PerplexityLabs" },
     },
   },
-  Flux: {
-    display: "Flux",
+  "Flux 1.1 (Image)": {
+    display: "Flux 1.1",
     value: "flux",
     providers: {
       Auto: { display: "Auto", value: "auto" },
@@ -62,33 +62,33 @@ const models = {
       Blackbox: { display: "Blackbox", value: "Blackbox" },
     },
   },
-  "Flux Pro": {
-    display: "Flux Pro",
-    value: "flux-pro",
-    providers: {
-      Auto: { display: "Auto", value: "auto" },
-    //   Airforce: { display: "Airforce", value: "Airforce" },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-    },
-  },
-  MidJourney: {
-    display: "MidJourney",
-    value: "midjourney",
-    providers: {
-      Auto: { display: "Auto", value: "auto" },
-      // Airforce: { display: "Airforce", value: "Airforce" },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-    },
-  },
-//   "Flux Dev": {
-//     display: "Flux Dev",
-//     value: "flux-dev",
-//     providers: {
-//       Auto: { display: "Auto", value: "auto" },
-//       HuggingFace: { display: "HuggingFace", value: "HuggingFace" },
-//       "BlackForest Labs": { display: "BlackForest", value: "Flux" },
-//     },
-//   },
+  // "Flux Pro": {
+  //   display: "Flux Pro",
+  //   value: "flux-pro",
+  //   providers: {
+  //     Auto: { display: "Auto", value: "auto" },
+  //   //   Airforce: { display: "Airforce", value: "Airforce" },
+  //     PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
+  //   },
+  // },
+  // MidJourney: {
+  //   display: "MidJourney",
+  //   value: "midjourney",
+  //   providers: {
+  //     Auto: { display: "Auto", value: "auto" },
+  //     // Airforce: { display: "Airforce", value: "Airforce" },
+  //     PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
+  //   },
+  // },
+  // "Flux Dev": {
+  //   display: "Flux Dev",
+  //   value: "flux-dev",
+  //   providers: {
+  //     Auto: { display: "Auto", value: "auto" },
+  //     HuggingFace: { display: "HuggingFace", value: "HuggingFace" },
+  //     "BlackForest Labs": { display: "BlackForest", value: "Flux" },
+  //   },
+  // },
 };
 
 export default models;
