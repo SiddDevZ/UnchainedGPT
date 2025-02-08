@@ -287,9 +287,9 @@ export function Home() {
 
           <div
             ref={featuresRef}
-            className="flex justify-center mt-10"
+            className="flex justify-center mt-[1rem] z-50 overflow-hidden"
           >
-            <div className="absolute flex justify-center w-full h-full">
+            <div className="absolute flex justify-center pt-[4rem] w-full h-full overflow-hidden">
               <div
                 className="w-[200vw] h-[200vw] absolute lg:translate-y-16 md:translate-y-20 sm:translate-y-24 xs:translate-y-32 xss:translate-y-28 opacity-30"
                 style={{
@@ -297,7 +297,10 @@ export function Home() {
                   backgroundRepeat: "no-repeat",
                   backgroundPosition: "center",
                   backgroundSize: "contain",
-                  filter: "drop-shadow(0 0 10.5em #e98c00ad)",
+                  filter: "drop-shadow(0 0 10.5em rgba(233, 140, 0, 0.4))",
+                  "@media screen and (-moz-images-in-menus:0)": {
+                    filter: "drop-shadow(0 0 10.5em rgba(233, 140, 0, 0.6))"
+                  }
                 }}
               ></div>
             </div>
