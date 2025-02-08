@@ -287,9 +287,9 @@ export function Home() {
 
           <div
             ref={featuresRef}
-            className="flex justify-center overflow-hidden mt-10"
+            className="flex justify-center mt-10"
           >
-            <div className="absolute flex justify-center w-full h-full overflow-hidden">
+            <div className="absolute flex justify-center w-full h-full">
               <div
                 className="w-[200vw] h-[200vw] absolute lg:translate-y-16 md:translate-y-20 sm:translate-y-24 xs:translate-y-32 xss:translate-y-28 opacity-30"
                 style={{
