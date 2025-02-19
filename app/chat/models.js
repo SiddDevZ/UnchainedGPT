@@ -23,14 +23,14 @@ const models = {
       "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
     },
   },
-  "Qwen 2.5 Coder": {
-    display: "Qwen Coder",
-    value: "qwen-2.5-coder-32b",
+  "o3-mini": {
+    display: "o3-mini",
+    value: "o3-mini",
     providers: {
       Auto: { display: "Auto", value: "auto" },
     //   "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-      // "GeminiPro": { display: "GeminiPro", value: "GeminiPro" },
+      // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+      "DuckDuck": { display: "DuckDuck", value: "DDG" },
     },
   },
   "Evil (Experimental)": {
@@ -76,15 +76,15 @@ const models = {
       Blackbox: { display: "Blackbox", value: "Blackbox" },
     },
   },
-  // "Flux Pro": {
-  //   display: "Flux Pro",
-  //   value: "flux-pro",
-  //   providers: {
-  //     Auto: { display: "Auto", value: "auto" },
-  //   //   Airforce: { display: "Airforce", value: "Airforce" },
-  //     PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-  //   },
-  // },
+  "Flux Pro": {
+    display: "Flux Pro",
+    value: "flux-pro",
+    providers: {
+      Auto: { display: "Auto", value: "auto" },
+    //   Airforce: { display: "Airforce", value: "Airforce" },
+      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
+    },
+  },
   // MidJourney: {
   //   display: "MidJourney",
   //   value: "midjourney",
@@ -101,6 +101,7 @@ const models = {
   //     Auto: { display: "Auto", value: "auto" },
   //     HuggingFace: { display: "HuggingFace", value: "HuggingFace" },
   //     "BlackForest Labs": { display: "BlackForest", value: "Flux" },
+  //     PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
   //   },
   // },
 };

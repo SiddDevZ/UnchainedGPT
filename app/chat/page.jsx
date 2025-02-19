@@ -26,7 +26,7 @@ const Page = () => {
   const messagesRef = useRef();
   const [autoScroll, setAutoScroll] = useState(true);
   const messagesEndRef = useRef(null);
-  const [selectedModel, setSelectedModel] = useState(Object.keys(models)[1]);
+  const [selectedModel, setSelectedModel] = useState(Object.keys(models)[0]);
   const [selectedProvider, setSelectedProvider] = useState(
     Object.keys(models[Object.keys(models)[0]].providers)[0]
   );
