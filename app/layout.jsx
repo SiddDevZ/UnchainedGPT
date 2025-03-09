@@ -1,6 +1,7 @@
 import "./globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import Head from 'next/head';
+import Script from 'next/script';
 
 const metadata = {
   title: 'UnchainedGPT',
@@ -21,6 +22,9 @@ export default function RootLayout({ children }) {
         <link rel="icon" href={metadata.icons.icon} />
       </head>
       <body>
+        {/* Cloudflare Web Analytics */}
+        <script defer src='https://static.cloudflareinsights.com/beacon.min.js' strategy="afterInteractive" data-cf-beacon='{"token": "39259b41d5384a5098e537a48746630f"}'></script>
+        
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
           {children}
         </GoogleOAuthProvider>
