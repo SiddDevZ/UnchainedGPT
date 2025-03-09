@@ -30,10 +30,11 @@ const models = {
       Auto: { display: "Auto", value: "auto" },
     //   "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
       // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+      // "Liaobots": { display: "Liaobots", value: "Liaobots" },
       "DuckDuck": { display: "DuckDuck", value: "DDG" },
     },
   },
-  "Evil (Experimental)": {
+  "Evil (Uncensored)": {
     display: "Evil",
     value: "evil",
     providers: {

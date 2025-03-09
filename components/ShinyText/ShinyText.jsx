@@ -12,7 +12,7 @@ export const ShinyText = () => {
       >
         <div className="inline-flex items-center justify-center px-4 py-1">
           <AnimatedShinyText>
-            ✨ Introducing Zenos AI 2.0
+            ✨ Introducing UnchainedGPT
           </AnimatedShinyText>
           <ArrowRightIcon className="ml-2 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
         </div>

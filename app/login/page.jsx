@@ -59,7 +59,7 @@ const page = () => {
     verifyToken();
   }, [router]);
 
-  useEffect(() => {
+  useEffect(() => {8
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 640);
     };

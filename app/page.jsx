@@ -216,7 +216,7 @@ export function Home() {
             </h1>
             <h4 className="hero-animate hero-animate-delay-2 text-center font-inter font-medium text-[#cccccc] sm:text-lg xss:text-sm sm:w-[70%] xss:w-[95%] mx-auto">
               Discover the power of AI with Free Access to ChatGPT 4o, MidJourney,
-              o1-preview, Flux 1.1, Claude, and alot more. One platform to create,
+              o3-mini, Flux 1.1, Claude, and alot more. One platform to create,
               innovate, and explore without limits.
             </h4>
             <div className="hero-animate hero-animate-delay-3 mx-auto mt-6 space-x-5 font-inter font-medium">
@@ -443,9 +443,9 @@ export function Home() {
           <Footer />
           <p
             className="text-center font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 dark:from-neutral-950 to-neutral-200 dark:to-neutral-800 w-full overflow-hidden whitespace-nowrap"
-            style={{ fontSize: "min(17vw)" }}
+            style={{ fontSize: "min(9vw)" }}
           >
-            ZENOS AI
+            UnchainedGPT
           </p>
         </div>
         <Particles

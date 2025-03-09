@@ -7,14 +7,14 @@ const Navbar = () => {
   return (
     <div className="flex justify-between items-center mx-4 md:mx-16 lg:mx-32 3xl:mx-36 py-6">
       <div className="text-xl flex justify-center space-x-12 font-inter items-center">
-        <div className="flex items-center space-x-3 font-bold">
+        <div className="flex items-center space-x-2.5 font-bold">
           <img
-            src="/logo.webp"
+            src="/unchained.png"
             alt="Zenos AI Logo"
-            className="sm:w-8 sm:h-8 xss:w-7 xss:h-7"
+            className="sm:w-9 sm:h-9 xss:w-7 xss:h-7"
           />
-          <h2 className="sm:text-[1rem] xss:text-[0.95rem] leading-5 font-medium">
-            Zenos AI
+          <h2 className="sm:text-[1rem] xss:text-[0.95rem] font-inter leading-5 font-medium">
+            UnchainedGPT
           </h2>
         </div>
         {/* <h3 className='text-[0.9rem] leading-5 text-[#dadada]'>Features</h3>
@@ -29,8 +29,8 @@ const Navbar = () => {
           Login
         </Link>
         {/* <button className='md:px-4 md:py-[0.37rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md '>Get Started</button> */}
-        <Link href="/register">
-          <RainbowButton>Get Started</RainbowButton>
+        <Link target="_blank" href="https://x.com/UnchainedGPT">
+          <RainbowButton>Twitter</RainbowButton>
         </Link>
       </div>
     </div>
