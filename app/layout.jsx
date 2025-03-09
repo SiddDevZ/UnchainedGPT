@@ -23,7 +23,11 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         {/* Cloudflare Web Analytics */}
-        <script defer src='https://static.cloudflareinsights.com/beacon.min.js' strategy="afterInteractive" data-cf-beacon='{"token": "39259b41d5384a5098e537a48746630f"}'></script>
+        <Script 
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          strategy="afterInteractive"
+          data-cf-beacon='{"token": "39259b41d5384a5098e537a48746630f"}'
+        />
         
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
           {children}
