@@ -12,9 +12,9 @@ const models = {
       // "Jmuz": {display: "Jmuz", value: "Jmuz" },
     },
   },
-  "Claude 3.5 Sonnet": {
-    display: "Claude 3.5",
-    value: "claude-3.5-sonnet",
+  "Claude 3.7 Sonnet": {
+    display: "Claude 3.7",
+    value: "claude-3.7-sonnet",
     providers: {
       Auto: { display: "Auto", value: "auto" },
       "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
@@ -29,7 +29,7 @@ const models = {
     providers: {
       Auto: { display: "Auto", value: "auto" },
     //   "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
-      // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+      "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
       // "Liaobots": { display: "Liaobots", value: "Liaobots" },
       "DuckDuck": { display: "DuckDuck", value: "DDG" },
     },
@@ -60,8 +60,8 @@ const models = {
       Auto: { display: "Auto", value: "auto" },
       // "Jmuz": {display: "Jmuz", value: "Jmuz" },
       "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
-      // PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-    //   Perplexity: { display: "Perplexity", value: "PerplexityLabs" },
+      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
+      // Perplexity: { display: "Perplexity", value: "PerplexityLabs" },
     },
   },
   "Flux 1.1 (Image)": {
@@ -86,15 +86,15 @@ const models = {
       PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
     },
   },
-  // MidJourney: {
-  //   display: "MidJourney",
-  //   value: "midjourney",
-  //   providers: {
-  //     Auto: { display: "Auto", value: "auto" },
-  //     // Airforce: { display: "Airforce", value: "Airforce" },
-  //     PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-  //   },
-  // },
+  MidJourney: {
+    display: "MidJourney",
+    value: "midjourney",
+    providers: {
+      Auto: { display: "Auto", value: "auto" },
+      // Airforce: { display: "Airforce", value: "Airforce" },
+      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
+    },
+  },
   // "Flux Dev": {
   //   display: "Flux Dev",
   //   value: "flux-dev",
