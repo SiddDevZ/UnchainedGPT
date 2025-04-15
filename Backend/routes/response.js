@@ -15,7 +15,7 @@ export class ChatBot {
     constructor() {
         // this.conversationHistories = new Map();
         this.defaultModel = "gpt-4o";
-        this.providers = ['Blackbox', 'DarkAI', 'PollinationsAI'];
+        this.providers = ['DarkAI', 'PollinationsAI'];
     }
 
     async getResponse(socket, model, provider, history) {

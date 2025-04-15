@@ -37,7 +37,7 @@ export default (io) => {
 
 async function generateAndUpdateTitle(chatId, prompt, io) {
   const defaultModel = "gpt-4o";
-  const providers = ['Blackbox', 'DarkAI', 'PollinationsAI'];
+  const providers = ['DarkAI', 'PollinationsAI'];
   let generatedTitle = "New Chat";
 
   const providerPromises = providers.map(async (provider) => {

@@ -5,7 +5,7 @@ const models = {
     providers: {
       Auto: { display: "Auto", value: "auto" },
       "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
-      "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+      // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
       "Dark AI": { display: "DarkAI", value: "DarkAI" },
       // Liaobots: { display: "Liaobots", value: "Liaobots" },
       // "Copilot": { display: "Copilot", value: "Copilot" },
@@ -17,29 +17,30 @@ const models = {
     value: "claude-3.7-sonnet",
     providers: {
       Auto: { display: "Auto", value: "auto" },
-      "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+      // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
       // "Liaobots": { display: "Liaobots", value: "Liaobots" },
       // "Jmuz": {display: "Jmuz", value: "Jmuz" },
       "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
     },
   },
-  "o3-mini": {
-    display: "o3-mini",
-    value: "o3-mini",
-    providers: {
-      Auto: { display: "Auto", value: "auto" },
-    //   "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
-      "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
-      // "Liaobots": { display: "Liaobots", value: "Liaobots" },
-      "DuckDuck": { display: "DuckDuck", value: "DDG" },
-    },
-  },
+  // "o3-mini": {
+  //   display: "o3-mini",
+  //   value: "o3-mini",
+  //   providers: {
+  //     Auto: { display: "Auto", value: "auto" },
+  //   //   "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
+  //     // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+  //     "TypeGPT": { display: "TypeGPT", value: "TypeGPT" },
+  //     "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
+  //     "DuckDuck": { display: "DuckDuck", value: "DDG" },
+  //   },
+  // },
   "Evil (Uncensored)": {
     display: "Evil",
     value: "evil",
     providers: {
       Auto: { display: "Auto", value: "auto" },
-      // "Airforce": { display: "Airforce", value: "Airforce" },
+      "TypeGPT": { display: "TypeGPT", value: "TypeGPT" },
       PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
     },
   },
@@ -48,9 +49,9 @@ const models = {
     value: "llama-3.3-70b",
     providers: {
       Auto: { display: "Auto", value: "auto" },
-      "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+      "DeepInfraChat": { display: "DeepInfra", value: "DeepInfraChat" },
       PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-    //   Perplexity: { display: "Perplexity", value: "PerplexityLabs" },
+      LambdaChat: { display: "LambdaChat", value: "LambdaChat" },
     },
   },
   "Deepseek r1": {
@@ -58,10 +59,11 @@ const models = {
     value: "deepseek-r1",
     providers: {
       Auto: { display: "Auto", value: "auto" },
-      // "Jmuz": {display: "Jmuz", value: "Jmuz" },
-      "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+      "LambdaChat": {display: "LambdaChat", value: "LambdaChat" },
+      "DeepInfraChat": { display: "DeepInfra", value: "DeepInfraChat" },
       PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-      // Perplexity: { display: "Perplexity", value: "PerplexityLabs" },
+      Glider: { display: "Glider", value: "Glider" },
+      TypeGPT: { display: "TypeGPT", value: "TypeGPT" },
     },
   },
   "Flux 1.1 (Image)": {
@@ -69,12 +71,12 @@ const models = {
     value: "flux",
     providers: {
       Auto: { display: "Auto", value: "auto" },
-      BlackboxCreateAgent: {
-        display: "BlackboxC",
-        value: "BlackboxCreateAgent",
-      },
+      // BlackboxCreateAgent: {
+      //   display: "BlackboxC",
+      //   value: "BlackboxCreateAgent",
+      // },
       PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-      Blackbox: { display: "Blackbox", value: "Blackbox" },
+      // Blackbox: { display: "Blackbox", value: "Blackbox" },
     },
   },
   "Flux Pro": {

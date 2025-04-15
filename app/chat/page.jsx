@@ -3,17 +3,14 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import "remixicon/fonts/remixicon.css";
 import "./page.css";
 import Input from "../../components/Input/Input";
-import { CodeBlock } from "../../components/ui/code-block"
+import { CodeBlock } from "../../components/ui/code-block";
 import io from "socket.io-client";
 import Cookies from "js-cookie";
 import models from "./models";
-import { useRouter } from "next/navigation";
 import { useParams, usePathname } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { Toaster, toast } from "sonner";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const Page = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -30,7 +27,6 @@ const Page = () => {
   const [selectedProvider, setSelectedProvider] = useState(
     Object.keys(models[Object.keys(models)[0]].providers)[0]
   );
-  const [responseTime, setResponseTime] = useState(null);
   const startTimeRef = useRef(null);
   const [timeMetaData, setTimeMetaData] = useState({});
   const [messageMetadata, setMessageMetadata] = useState({});
@@ -42,7 +38,6 @@ const Page = () => {
   const latestChatIdRef = useRef(null);
   const [userData, setUserData] = useState({});
   const [copyIndex, setCopyIndex] = useState(null);
-  const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
   const [isToggling, setIsToggling] = useState(false);
