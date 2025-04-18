@@ -40,7 +40,7 @@ const models = {
     value: "evil",
     providers: {
       Auto: { display: "Auto", value: "auto" },
-      "TypeGPT": { display: "TypeGPT", value: "TypeGPT" },
+      // "TypeGPT": { display: "TypeGPT", value: "TypeGPT" },
       PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
     },
   },
@@ -66,37 +66,37 @@ const models = {
       TypeGPT: { display: "TypeGPT", value: "TypeGPT" },
     },
   },
-  "Flux 1.1 (Image)": {
-    display: "Flux 1.1",
-    value: "flux",
-    providers: {
-      Auto: { display: "Auto", value: "auto" },
-      // BlackboxCreateAgent: {
-      //   display: "BlackboxC",
-      //   value: "BlackboxCreateAgent",
-      // },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-      // Blackbox: { display: "Blackbox", value: "Blackbox" },
-    },
-  },
-  "Flux Pro": {
-    display: "Flux Pro",
-    value: "flux-pro",
-    providers: {
-      Auto: { display: "Auto", value: "auto" },
-    //   Airforce: { display: "Airforce", value: "Airforce" },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-    },
-  },
-  MidJourney: {
-    display: "MidJourney",
-    value: "midjourney",
-    providers: {
-      Auto: { display: "Auto", value: "auto" },
-      // Airforce: { display: "Airforce", value: "Airforce" },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-    },
-  },
+  // "Flux 1.1 (Image)": {
+  //   display: "Flux 1.1",
+  //   value: "flux",
+  //   providers: {
+  //     Auto: { display: "Auto", value: "auto" },
+  //     // BlackboxCreateAgent: {
+  //     //   display: "BlackboxC",
+  //     //   value: "BlackboxCreateAgent",
+  //     // },
+  //     ARTA: { display: "ARTA", value: "ARTA" },
+  //     Blackbox: { display: "Blackbox", value: "Websim" },
+  //   },
+  // },
+  // "Flux Pro": {
+  //   display: "Flux Pro",
+  //   value: "flux-pro",
+  //   providers: {
+  //     Auto: { display: "Auto", value: "auto" },
+  //   //   Airforce: { display: "Airforce", value: "Airforce" },
+  //     PollinationsAI: { display: "PollinationsAI", value: "PollinationsImage" },
+  //   },
+  // },
+  // MidJourney: {
+  //   display: "MidJourney",
+  //   value: "midjourney",
+  //   providers: {
+  //     Auto: { display: "Auto", value: "auto" },
+  //     // Airforce: { display: "Airforce", value: "Airforce" },
+  //     PollinationsAI: { display: "PollinationsAI", value: "PollinationsImage" },
+  //   },
+  // },
   // "Flux Dev": {
   //   display: "Flux Dev",
   //   value: "flux-dev",
