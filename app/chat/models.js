@@ -23,18 +23,18 @@ const models = {
       "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
     },
   },
-  // "o3-mini": {
-  //   display: "o3-mini",
-  //   value: "o3-mini",
-  //   providers: {
-  //     Auto: { display: "Auto", value: "auto" },
-  //   //   "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
-  //     // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
-  //     "TypeGPT": { display: "TypeGPT", value: "TypeGPT" },
-  //     "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
-  //     "DuckDuck": { display: "DuckDuck", value: "DDG" },
-  //   },
-  // },
+  "o3-mini": {
+    display: "o3-mini",
+    value: "o3-mini",
+    providers: {
+      Auto: { display: "Auto", value: "auto" },
+      // "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
+      // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+      // "TypeGPT": { display: "TypeGPT", value: "TypeGPT" },
+      "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
+      // "DuckDuck": { display: "DuckDuck", value: "DDG" },
+    },
+  },
   "Evil (Uncensored)": {
     display: "Evil",
     value: "evil",
