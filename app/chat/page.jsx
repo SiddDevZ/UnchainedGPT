@@ -566,16 +566,16 @@ const Page = () => {
     <div className="flex w-full h-screen bg-[#121212] relative">
       <div
         className={`
-          h-full bg-[#212121] w-[17.5rem] flex-shrink-0 flex flex-col
+          h-full bg-gradient-to-b from-[#1a1a1a] to-[#212121] w-[17.5rem] flex-shrink-0 flex flex-col border-r border-[#333333]
           ${isToggling ? "transition-all duration-300 ease-in-out" : ""}
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          ${isMobile ? "fixed left-0 top-0 z-40" : ""}
+          ${isMobile ? "fixed left-0 top-0 z-40 shadow-2xl" : ""}
         `}
       >
-        <div className="px-2 py-3">
-          <div className="flex items-center justify-between sm:mb-6 mb-2">
+        <div className="px-3 py-4">
+          <div className="flex items-center justify-between sm:mb-6 mb-3">
             <button
-              className="md:hidden text-white p-2"
+              className="md:hidden text-white p-2 hover:bg-[#2a2a2a] rounded-lg transition-colors"
               onClick={toggleSidebar}
             >
               <i
@@ -585,24 +585,24 @@ const Page = () => {
               ></i>
             </button>
             <h1
-              className={`font-semibold hidden md:block text-[#c69326] px-2.5 font-mono text-xl`}
+              className={`font-bold hidden md:block text-transparent bg-gradient-to-r from-[#c69326] to-[#d4a843] bg-clip-text px-2.5 font-mono text-xl`}
             >
               UnchainedGPT
             </h1>
           </div>
           <button
             onClick={() => newChat()}
-            className="font-medium flex items-center space-x-2 w-full hover:bg-[#383838] px-2.5 py-1 rounded-lg transition-all"
+            className="font-medium flex items-center space-x-3 w-full hover:bg-gradient-to-r hover:from-[#383838] hover:to-[#2a2a2a] px-3 py-2.5 rounded-xl transition-all duration-200 group"
           >
-            <i className="ri-chat-new-line text-[#e2e2e2] text-xl"></i>
+            <i className="ri-chat-new-line text-[#c69326] text-xl group-hover:scale-110 transition-transform"></i>
             <span className="text-[#e2e2e2] font-medium">New Chat</span>
           </button>
         </div>
-        <div className="flex-1 overflow-hidden border-t border-[#414141]">
-          <div className="h-full overflow-y-auto px-2 py-3">
+        <div className="flex-1 overflow-hidden border-t border-[#333333]">
+          <div className="h-full overflow-y-auto px-3 py-4">
             {chatData.map(({ category, chats }, categoryIndex) => (
-              <div key={category} className="mb-4">
-                <h6 className="text-[#8e8e8e] text-xs font-medium mb-2 px-2.5 tracking-wider">
+              <div key={category} className="mb-5">
+                <h6 className="text-[#8e8e8e] text-xs font-semibold mb-3 px-2.5 tracking-wider uppercase">
                   {category}
                 </h6>
                 {chats.map((chat, chatIndex) => (
@@ -610,20 +610,20 @@ const Page = () => {
                     key={chat.id}
                     // href={`/chat/${chat.id}`}
                     onClick={() => fetchSpecificChat(chat.id)}
-                    className="w-full mb-0.5 text-left px-2.5 py-1.5 rounded-lg 
+                    className="w-full mb-0.5 text-left px-3 py-2.5 rounded-xl 
                          hover:bg-gradient-to-r hover:from-[#383838] hover:to-[#2a2a2a] 
-                         transition-all duration-300 ease-in-out 
-                         group relative overflow-hidden"
+                         transition-all duration-200 ease-in 
+                         group relative overflow-hidden border border-transparent"
                   >
                     <span
-                      className="text-[#e6e6e6] group-hover:text-white text-[0.96rem] whitespace-nowrap overflow-hidden text-ellipsis block
-                           transition-colors duration-300"
+                      className="text-[#e6e6e6] group-hover:text-white text-[0.95rem] whitespace-nowrap overflow-hidden text-ellipsis block
+                           transition-colors duration-200"
                     >
                       {categoryIndex === 0 && chatIndex === 0
                         ? animatedTitle
                         : chat.title}
                     </span>
-                    <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#212121] group-hover:from-[#2a2a2a] to-transparent"></div>
+                    {/* <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#212121] group-hover:from-[#2a2a2a] to-transparent"></div> */}
                   </button>
                 ))}
               </div>
