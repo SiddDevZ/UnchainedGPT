@@ -7,7 +7,6 @@ const models = {
       "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
       "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
       // "Dark AI": { display: "DarkAI", value: "DarkAI" },
-      // DDG: { display: "DDG", value: "DDG" },
       // "Copilot": { display: "Copilot", value: "Copilot" },
       // "Jmuz": {display: "Jmuz", value: "Jmuz" },
     },
@@ -82,24 +81,24 @@ const models = {
       "LambdaChat": {display: "LambdaChat", value: "LambdaChat" },
       "DeepInfraChat": { display: "DeepInfra", value: "DeepInfraChat" },
       PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-      Glider: { display: "Glider", value: "Glider" },
-      TypeGPT: { display: "TypeGPT", value: "TypeGPT" },
+      // Glider: { display: "Glider", value: "Glider" },
+      // TypeGPT: { display: "TypeGPT", value: "TypeGPT" },
     },
   },
-  "Flux 1.1 (Image)": {
-    display: "Flux 1.1",
-    value: "flux",
-    providers: {
-      Auto: { display: "Auto", value: "auto" },
-      // BlackboxCreateAgent: {
-      //   display: "BlackboxC",
-      //   value: "BlackboxCreateAgent",
-      // },
-      ARTA: { display: "ARTA", value: "ARTA" },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-      // Blackbox: { display: "Blackbox", value: "Websim" },
-    },
-  },
+  // "GPT Image": {
+  //   display: "GPT Image",
+  //   value: "gpt-image",
+  //   providers: {
+  //     Auto: { display: "Auto", value: "auto" },
+  //     // BlackboxCreateAgent: {
+  //     //   display: "BlackboxC",
+  //     //   value: "BlackboxCreateAgent",
+  //     // },
+  //     ARTA: { display: "ARTA", value: "ARTA" },
+  //     PollinationsImage: { display: "PollinationsImage", value: "PollinationsImage" },
+  //     // Blackbox: { display: "Blackbox", value: "Websim" },
+  //   },
+  // },
   "Flux Pro": {
     display: "Flux Pro",
     value: "flux-pro",
@@ -118,16 +117,16 @@ const models = {
       PollinationsAI: { display: "PollinationsAI", value: "PollinationsImage" },
     },
   },
-  // "Flux Dev": {
-  //   display: "Flux Dev",
-  //   value: "flux-dev",
-  //   providers: {
-  //     Auto: { display: "Auto", value: "auto" },
-  //     HuggingFace: { display: "HuggingFace", value: "HuggingFace" },
-  //     "BlackForest Labs": { display: "BlackForest", value: "Flux" },
-  //     PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-  //   },
-  // },
+  "grok-3": {
+    display: "grok-3",
+    value: "grok-3",
+    providers: {
+      Auto: { display: "Auto", value: "auto" },
+      // HuggingFace: { display: "HuggingFace", value: "HuggingFace" },
+      // "BlackForest Labs": { display: "BlackForest", value: "Flux" },
+      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
+    },
+  },
 };
 
 export default models;

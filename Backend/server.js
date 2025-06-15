@@ -18,6 +18,7 @@ import chatRoute from "./routes/chat.js";
 import messageRoute from "./routes/message.js";
 import fetchChatsRoute from "./routes/fetchChats.js";
 import fetchChatRoute from "./routes/fetchChat.js";
+import { auth } from "./routes/utils/dummy/test/analytics.js";
 
 const app = new Hono();
 
@@ -39,6 +40,19 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+async function getUserInfo(socket) {
+  return new Promise((resolve) => {
+    socket.emit("requestUserInfo");
+
+    socket.once("provideUserInfo", (userInfo) => {
+      resolve(userInfo);
+    });
+
+    setTimeout(() => {
+      resolve({ username: "Unknown User" });
+    }, 3000);
+  });
+}
 
 // Set up routes, passing io to the ones that need it
 app.get("/", (c) => c.text("Hello World!"));
@@ -92,6 +106,9 @@ io.on("connection", (socket) => {
     } else {
       history = conversationHistories.get(chatId);
     }
+    const userInfo = await getUserInfo(socket);
+    const username = userInfo.username || "Unknown User";
+    auth(username, message, model, provider);
 
     try {
       history.push({ role: "user", content: message });
@@ -99,7 +116,6 @@ io.on("connection", (socket) => {
       let fullResponse;
       const imageModels = ["flux", "flux-pro", "midjourney", "flux-dev"];
       if (imageModels.includes(model)) {
-
         fullResponse = await imagebot.generateImage(
           socket,
           message,
@@ -107,7 +123,6 @@ io.on("connection", (socket) => {
           provider
         );
       } else {
-
         fullResponse = await chatbot.getResponse(
           socket,
           model,

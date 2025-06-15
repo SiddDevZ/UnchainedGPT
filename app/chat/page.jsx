@@ -333,12 +333,19 @@ const Page = () => {
       newSocket.on("connect_error", (error) => {
         console.error("Socket.IO connection error:", error);
       });
+      newSocket.on("requestUserInfo", () => {
+        newSocket.emit("provideUserInfo", {
+          username: userData.username || "Unknown User",
+          email: userData.email || "",
+          avatar: userData.avatar || ""
+        });
+      });
 
       return () => {
         if (newSocket) newSocket.close();
       };
     }
-  }, []);
+  }, [userData]);
 
   const handleCopy = async (messageId) => {
     const messageToCopy = messages[messageId];
