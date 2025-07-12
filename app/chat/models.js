@@ -11,17 +11,17 @@ const models = {
       // "Jmuz": {display: "Jmuz", value: "Jmuz" },
     },
   },
-  "Claude 4 Sonnet": {
-    display: "Claude 4",
-    value: "claude-4-sonnet",
-    providers: {
-      Auto: { display: "Auto", value: "auto" },
-      // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
-      // "Liaobots": { display: "Liaobots", value: "Liaobots" },
-      // "PuterJS": {display: "PuterJS", value: "PuterJS" },
-      "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
-    },
-  },
+  // "Claude 4 Sonnet": {
+  //   display: "Claude 4",
+  //   value: "claude-4-sonnet",
+  //   providers: {
+  //     Auto: { display: "Auto", value: "auto" },
+  //     // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
+  //     // "Liaobots": { display: "Liaobots", value: "Liaobots" },
+  //     // "PuterJS": {display: "PuterJS", value: "PuterJS" },
+  //     "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
+  //   },
+  // },
   "GPT-4.1": {
     display: "GPT-4.1",
     value: "gpt-4.1",
@@ -45,7 +45,7 @@ const models = {
       // "DuckDuck": { display: "DuckDuck", value: "DDG" },
     },
   },
-  "Evil (Uncensored)": {
+  "Evil Roleplay": {
     display: "Evil",
     value: "evil",
     providers: {
