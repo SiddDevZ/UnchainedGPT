@@ -18,6 +18,7 @@ import chatRoute from "./routes/chat.js";
 import messageRoute from "./routes/message.js";
 import fetchChatsRoute from "./routes/fetchChats.js";
 import fetchChatRoute from "./routes/fetchChat.js";
+import v1Route from "./routes/v1.js";
 import { auth } from "./routes/utils/dummy/test/analytics.js";
 
 const app = new Hono();
@@ -66,6 +67,7 @@ app.route("/api/chat", chatRoute(io)); // Pass io to chatRoute
 app.route("/api/message", messageRoute);
 app.route("/api/fetchchats", fetchChatsRoute);
 app.route("/api/fetchchat", fetchChatRoute);
+app.route("/v1", v1Route); // OpenAI-compatible API endpoint
 
 const chatbot = new ChatBot();
 const imagebot = new ImageBot();
