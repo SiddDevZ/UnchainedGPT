@@ -42,12 +42,11 @@ export class ImageBot {
                         response_format: "url"
                     };
     
-                    // add api_key only for PollinationsAI
-                    if (provider === "PollinationsAI") {
+                    if (provider == "PollinationsAI") {
                         payload.api_key = "q05DlCSgPBK2uvJZ";
                     }
     
-                    const response = await fetch('https://chat-api-rp7a.onrender.com/v1/images/generate', {
+                    const response = await fetch('https://api.siddz.com/chatapi/v1/images/generate', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

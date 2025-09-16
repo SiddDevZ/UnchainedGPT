@@ -44,7 +44,6 @@ export class ChatBot {
                     // add api_key if provider is PollinationsAI
                     if (currentProvider == "PollinationsAI") {
                         payload.api_key = "q05DlCSgPBK2uvJZ"; 
-                        // 👆 better to keep it in env instead of hardcoding
                     }
     
                     const response = await fetch('https://api.siddz.com/chatapi/v1/chat/completions', {

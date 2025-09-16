@@ -58,12 +58,11 @@ async function generateAndUpdateTitle(chatId, prompt, io) {
         stream: false
       }
 
-      // add api_key only for PollinationsAI
-      if (provider === 'PollinationsAI') {
+      if (provider == 'PollinationsAI') {
         payload.api_key = "q05DlCSgPBK2uvJZ"
       }
 
-      const response = await fetch('https://chat-api-rp7a.onrender.com/v1/chat/completions', {
+      const response = await fetch('https://api.siddz.com/chatapi/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
