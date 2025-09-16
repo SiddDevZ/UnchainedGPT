@@ -20,32 +20,40 @@ export class ImageBot {
     async generateImage(socket, message, model, provider) {
         const selectedModel = model || this.defaultModel;
         const selectedProviders = provider && provider.length > 0 ? provider : this.providers;
-
-        console.log(selectedModel)
-        console.log(selectedProviders)
-
+    
+        console.log(selectedModel);
+        console.log(selectedProviders);
+    
         let chosenProvider = null;
         let imageUrl = null;
         const abortControllers = new Map();
-
+    
         const providerPromises = selectedProviders.map(provider => {
             const controller = new AbortController();
             abortControllers.set(provider, controller);
-
+    
             return (async () => {
                 try {
+                    // base payload
+                    const payload = {
+                        prompt: message,
+                        model: selectedModel,
+                        provider: provider,
+                        response_format: "url"
+                    };
+    
+                    // add api_key only for PollinationsAI
+                    if (provider === "PollinationsAI") {
+                        payload.api_key = "q05DlCSgPBK2uvJZ";
+                    }
+    
                     const response = await fetch('https://chat-api-rp7a.onrender.com/v1/images/generate', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         signal: controller.signal,
-                        body: JSON.stringify({
-                            prompt: message,
-                            model: selectedModel,
-                            provider: provider,
-                            response_format: "url"
-                        })
+                        body: JSON.stringify(payload)
                     });
 
                     if (!response.ok) return null;

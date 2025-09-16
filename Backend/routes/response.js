@@ -22,9 +22,6 @@ export class ChatBot {
         const selectedModel = model || this.defaultModel;
         const selectedProviders = provider && provider.length > 0 ? provider : this.providers;
     
-        // console.log(selectedModel);
-        // console.log(selectedProviders);
-    
         let fullResponse = "";
         let isStreamingStarted = false;
         let activeProvider = null;
@@ -33,21 +30,30 @@ export class ChatBot {
     
         return new Promise((resolve, reject) => {
             let hasResolved = false;
-            
+    
             selectedProviders.forEach(async (currentProvider) => {
                 try {
-                    const response = await fetch('https://chat-api-rp7a.onrender.com/v1/chat/completions', {
+                    // base payload
+                    const payload = {
+                        model: selectedModel,
+                        messages: history,
+                        provider: currentProvider,
+                        stream: true
+                    };
+    
+                    // add api_key if provider is PollinationsAI
+                    if (currentProvider == "PollinationsAI") {
+                        payload.api_key = "q05DlCSgPBK2uvJZ"; 
+                        // 👆 better to keep it in env instead of hardcoding
+                    }
+    
+                    const response = await fetch('https://api.siddz.com/chatapi/v1/chat/completions', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json'
                         },
-                        body: JSON.stringify({
-                            model: selectedModel,
-                            messages: history,
-                            provider: currentProvider,
-                            stream: true
-                        })
+                        body: JSON.stringify(payload)
                     });
 
                     if (!response.ok) {
