@@ -57,10 +57,29 @@ const Page = () => {
   useEffect(() => {
     latestChatIdRef.current = chatId;
   }, [chatId]);
-
+  
   const calculateResponseTime = (start, end) => {
     const timeDiff = end - start;
-    return (timeDiff / 1000).toFixed(1); // Convert to seconds and round to 1 decimal place
+    return (timeDiff / 1000).toFixed(1);
+  };
+  const getModelDisplay = (modelValue) => {
+    for (const [key, model] of Object.entries(models)) {
+      if (model.value === modelValue) {
+        return model.display;
+      }
+    }
+    return modelValue; // fallback
+  };
+
+  const getProviderKey = (providerDisplay) => {
+    for (const model of Object.values(models)) {
+      for (const [key, provider] of Object.entries(model.providers)) {
+        if (provider.display === providerDisplay) {
+          return key;
+        }
+      }
+    }
+    return providerDisplay; // fallback
   };
 
   const fetchAndCategorizeChats = async (userId) => {
@@ -762,13 +781,13 @@ const Page = () => {
                                       <div className="metadata space-x-2">
                                         {messageMetadata[index].model && (
                                           <span className="text-[#a0a0a0] font-semibold">
-                                            {messageMetadata[index].model}
+                                            {getModelDisplay(messageMetadata[index].model)}
                                           </span>
                                         )}
                                         {messageMetadata[index].provider && (
                                           <span className="text-[#8e8e8e] text-xs">
                                             with{" "}
-                                            {messageMetadata[index].provider}
+                                            {getProviderKey(messageMetadata[index].provider)}
                                           </span>
                                         )}
                                       </div>
@@ -888,13 +907,13 @@ const Page = () => {
                             <div className="metadata space-x-2">
                               {messageMetadata[messages.length].model && (
                                 <span className="text-[#a0a0a0] font-semibold">
-                                  {messageMetadata[messages.length].model}
+                                  {getModelDisplay(messageMetadata[messages.length].model)}
                                 </span>
                               )}
                               {messageMetadata[messages.length].provider && (
                                 <span className="text-[#8e8e8e] text-xs">
                                   with{" "}
-                                  {messageMetadata[messages.length].provider}
+                                  {getProviderKey(messageMetadata[messages.length].provider)}
                                 </span>
                               )}
                             </div>
