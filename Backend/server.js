@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import http from "http";
 import mongoose from "mongoose";
 import { config } from "dotenv";
+import { Readable } from "stream";
 
 config();
 
@@ -41,36 +42,45 @@ app.route("/api/login", loginRoute);
 
 // Create server and Socket.IO
 const server = http.createServer(async (req, res) => {
-  // Convert Node.js request to Web API Request
-  const protocol = req.socket.encrypted ? 'https' : 'http';
+  const protocol = req.socket.encrypted ? "https" : "http";
   const host = req.headers.host || `localhost:${port}`;
   const url = `${protocol}://${host}${req.url}`;
-  
-  // Get request body if present
-  let body = null;
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    body = await new Promise((resolve) => {
-      const chunks = [];
-      req.on('data', (chunk) => chunks.push(chunk));
-      req.on('end', () => resolve(Buffer.concat(chunks)));
-    });
+
+  // Build proper Fetch Headers
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (Array.isArray(value)) {
+      value.forEach((v) => headers.append(key, v));
+    } else if (value !== undefined) {
+      headers.append(key, value);
+    }
   }
-  
-  // Create Web API Request
+
+  // Convert body
+  let body = null;
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    body = Readable.toWeb(req);
+  }
+
+  // Create real Fetch Request
   const request = new Request(url, {
     method: req.method,
-    headers: req.headers,
-    body: body,
+    headers,
+    body,
+    duplex: "half",
   });
-  
+
   const response = await app.fetch(request);
 
-  // Write status
-  res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
+  // Write status/headers
+  res.writeHead(
+    response.status,
+    Object.fromEntries(response.headers.entries())
+  );
 
-  // Write body
-  const responseBody = await response.text();
-  res.end(responseBody);
+  // Pipe body
+  const text = await response.text();
+  res.end(text);
 });
 
 const io = new Server(server, {
