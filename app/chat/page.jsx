@@ -320,8 +320,7 @@ const Page = () => {
     // Ensure this runs only on the client side
     if (typeof window !== "undefined") {
       const newSocket = io("https://api.siddz.com/unchainedgpt", {
-        // const newSocket = io("http://localhost:3001", {
-        path: "/socket.io",
+        path: "/unchainedgpt/socket.io",
         transports: ["websocket", "polling"],
       });
 

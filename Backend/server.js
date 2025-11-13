@@ -52,7 +52,10 @@ const server = serve({
   port,
 });
 
+console.log(`Server running at http://localhost:${port}`);
+
 const io = new Server(server, {
+  path: "/unchainedgpt/socket.io",
   cors: {
     origin: "*",
     methods: ["GET", "POST"],
@@ -161,6 +164,4 @@ io.on("connection", (socket) => {
   });
 });
 
-console.log(`Server running at http://localhost:${port}`);
-
-export { server };
+export { server, io };
