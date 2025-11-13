@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import Navbar from "../components/Navbar/Navbar";
@@ -40,154 +38,6 @@ export function Home() {
   const { resolvedTheme } = useTheme();
   const [color, setColor] = useState("#ffffff");
   const [bgColor, setBgColor] = useState("#000000");
-  const gridRef = useRef(null);
-  const headerRef = useRef(null);
-  const featuresRef = useRef(null);
-  const sectionRef = useRef(null);
-  const faqRef = useRef(null);
-  const ctaRef = useRef(null);
-
-  useEffect(() => {
-    // Register the ScrollTrigger plugin
-    gsap.registerPlugin(ScrollTrigger);
-    const section = sectionRef.current;
-    const h2 = section.querySelector("h2");
-    const h4 = section.querySelector("h4");
-
-    if (gridRef.current && headerRef.current && featuresRef.current && faqRef.current && ctaRef.current) {
-      const gridItems = Array.from(gridRef.current.children);
-      const featureElements = featuresRef.current.querySelectorAll(
-        "h2, h4, img, .animation-container"
-      );
-      const faqElements = faqRef.current.querySelectorAll("h2, .faq-item");
-      const ctaElements = ctaRef.current.querySelectorAll('h3, p, button');
-
-      // Animate header
-      gsap.fromTo(
-        headerRef.current,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.5,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: headerRef.current,
-            start: "top bottom-=100",
-            end: "bottom top+=100",
-            toggleActions: "play none none reverse",
-          },
-        }
-      );
-
-      gsap.fromTo(
-        [h2, h4],
-        { opacity: 0, y: 50 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          ease: "power2.out",
-          stagger: 0.2,
-          scrollTrigger: {
-            trigger: section,
-            start: "top bottom-=100",
-            end: "bottom top+=100",
-            toggleActions: "play none none reverse",
-          },
-        }
-      );
-
-      gsap.fromTo(
-        ctaElements,
-        { 
-          opacity: 0, 
-          y: 50 
-        },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: 0.2,
-          scrollTrigger: {
-            trigger: ctaRef.current,
-            start: 'top 80%',
-            end: 'bottom 20%',
-            toggleActions: 'play none none reverse'
-          }
-        }
-      );
-
-      // Animate grid items
-      gridItems.forEach((item, index) => {
-        gsap.fromTo(
-          item,
-          { opacity: 0, y: 20 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.5,
-            ease: "power2.out",
-            delay: index * 0.125,
-            scrollTrigger: {
-              trigger: gridRef.current,
-              start: "top bottom-=100",
-              end: "bottom top+=100",
-              toggleActions: "play none none reverse",
-            },
-          }
-        );
-      });
-
-      // Animate feature elements
-      featureElements.forEach((element, index) => {
-        const totalElements = featureElements.length;
-        const delay = index < totalElements - 4 ? index * 0.1 : 0;
-
-        gsap.fromTo(
-          element,
-          { opacity: 0, y: 50 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: "power2.out",
-            delay: delay,
-            scrollTrigger: {
-              trigger: element,
-              start: "top bottom",
-              end: "bottom top",
-              toggleActions: "play none none reverse",
-              once: true,
-            },
-          }
-        );
-      });
-
-      // Animate FAQ elements
-      gsap.fromTo(
-        faqElements,
-        { opacity: 0, y: 50 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          ease: "power2.out",
-          stagger: 0.1,
-          scrollTrigger: {
-            trigger: faqRef.current,
-            start: "top bottom-=100",
-            end: "bottom top+=100",
-            toggleActions: "play none none reverse",
-          },
-        }
-      );
-    }
-
-    return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
-    };
-  }, []);
 
   useEffect(() => {
     if (resolvedTheme === "dark") {
@@ -249,14 +99,12 @@ export function Home() {
           </div>
           <div className="flex flex-col mt-[2rem]">
             <h4
-              ref={headerRef}
               className="text-[#46464c] font-inter font-semibold sm:text-base xss:text-sm text-center"
             >
               ALL THE MODELS YOU WILL EVER NEED
             </h4>
             <div className="flex justify-center">
               <div
-                ref={gridRef}
                 className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5 p-4 place-items-center"
               >
                 <div className="flex items-center space-x-3 h-10">
@@ -286,7 +134,6 @@ export function Home() {
           </div>
 
           <div
-            ref={featuresRef}
             className="flex justify-center mt-[1rem] z-50 overflow-hidden"
           >
             <div className="absolute flex justify-center pt-[4rem] w-full h-full overflow-hidden">
@@ -386,7 +233,6 @@ export function Home() {
             </div>
           </div>
           <div
-            ref={sectionRef}
             className="flex flex-col w-[100%] mt-[12.5rem] relative"
           >
             <h2 className="text-center font-inter font-medium text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-10 relative xs:w-full xss:w-[97%] z-10">
@@ -400,7 +246,6 @@ export function Home() {
           </div>
 
           <div
-            ref={faqRef}
             className="flex flex-col w-[100%] mt-[8.5rem] relative"
           >
             <h2 className="text-center font-inter font-medium text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-10 relative xs:w-full xss:w-[97%] z-10">
@@ -424,7 +269,7 @@ export function Home() {
               height={800}
               width={gridWidth}
             /> */}
-            <div ref={ctaRef} className="flex flex-col justify-center items-center w-full h-full mx-auto my-auto">
+            <div className="flex flex-col justify-center items-center w-full h-full mx-auto my-auto">
               <h3 className="text-center font-inter font-extrabold text-[#f5f5f5] sm:text-6xl xs:text-4xl xss:text-4xl leading-10 relative xss:w-[90%] z-10">
                 What are you waiting for?? <br />
                 Join us now!

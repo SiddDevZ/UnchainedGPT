@@ -319,7 +319,7 @@ const Page = () => {
   useEffect(() => {
     // Ensure this runs only on the client side
     if (typeof window !== "undefined") {
-      const newSocket = io("https://siddz-ai.onrender.com", {
+      const newSocket = io("https://api.siddz.com/unchainedgpt", {
         // const newSocket = io("http://localhost:3001", {
         path: "/socket.io",
         transports: ["websocket", "polling"],
