@@ -29,22 +29,49 @@ const dbUrl = process.env.DATABASE_URL;
 mongoose.connect(dbUrl);
 
 const port = process.env.PORT || 3001;
+
+// Set up routes first
+app.get("/", (c) => c.text("Hello World!"));
+// app.route('/api/response', responseRoute)
+app.route("/api/googleauth", googleLoginRoute);
+app.route("/api/verify", verifyRoute);
+app.route("/api/discordauth", discordLoginRoute);
+app.route("/api/register", registerRoute);
+app.route("/api/login", loginRoute);
+
+// Create server and Socket.IO
 const server = http.createServer(async (req, res) => {
-  const response = await app.fetch(req, res);
+  // Convert Node.js request to Web API Request
+  const protocol = req.socket.encrypted ? 'https' : 'http';
+  const host = req.headers.host || `localhost:${port}`;
+  const url = `${protocol}://${host}${req.url}`;
+  
+  // Get request body if present
+  let body = null;
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    body = await new Promise((resolve) => {
+      const chunks = [];
+      req.on('data', (chunk) => chunks.push(chunk));
+      req.on('end', () => resolve(Buffer.concat(chunks)));
+    });
+  }
+  
+  // Create Web API Request
+  const request = new Request(url, {
+    method: req.method,
+    headers: req.headers,
+    body: body,
+  });
+  
+  const response = await app.fetch(request);
 
   // Write status
   res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
 
   // Write body
-  const body = await response.text();
-  res.end(body);
+  const responseBody = await response.text();
+  res.end(responseBody);
 });
-
-
-server.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
-
 
 const io = new Server(server, {
   cors: {
@@ -52,6 +79,18 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+
+// Set up routes that need io
+app.route("/api/chat", chatRoute(io)); // Pass io to chatRoute
+app.route("/api/message", messageRoute);
+app.route("/api/fetchchats", fetchChatsRoute);
+app.route("/api/fetchchat", fetchChatRoute);
+app.route("/v1", v1Route); // OpenAI-compatible API endpoint
+
+const chatbot = new ChatBot();
+const imagebot = new ImageBot();
+const conversationHistories = new Map();
+
 async function getUserInfo(socket) {
   return new Promise((resolve) => {
     socket.emit("requestUserInfo");
@@ -65,24 +104,6 @@ async function getUserInfo(socket) {
     }, 3000);
   });
 }
-
-// Set up routes, passing io to the ones that need it
-app.get("/", (c) => c.text("Hello World!"));
-// app.route('/api/response', responseRoute)
-app.route("/api/googleauth", googleLoginRoute);
-app.route("/api/verify", verifyRoute);
-app.route("/api/discordauth", discordLoginRoute);
-app.route("/api/register", registerRoute);
-app.route("/api/login", loginRoute);
-app.route("/api/chat", chatRoute(io)); // Pass io to chatRoute
-app.route("/api/message", messageRoute);
-app.route("/api/fetchchats", fetchChatsRoute);
-app.route("/api/fetchchat", fetchChatRoute);
-app.route("/v1", v1Route); // OpenAI-compatible API endpoint
-
-const chatbot = new ChatBot();
-const imagebot = new ImageBot();
-const conversationHistories = new Map();
 
 io.on("connection", (socket) => {
   console.log("A user connected");
@@ -160,6 +181,10 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
+});
+
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
 
 export { server };
