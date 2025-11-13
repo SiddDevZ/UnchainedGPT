@@ -372,25 +372,28 @@ const Page = () => {
       } catch (error) {
         console.error("Error creating new chat:", error);
         setIsGenerating(false);
+        toast.error("Failed to create chat. Please try again.", { position: "top-right" });
         return;
       }
     }
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: {
-          index: messages.length + 1,
-          role: "user",
-          content: message,
-        },
-      }),
-    });
-
     try {
+      // Save user message to database
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: {
+            index: messages.length + 1,
+            role: "user",
+            content: message,
+          },
+        }),
+      });
+
+      // Send message to API and wait for complete response
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/streammessage`,
         {
@@ -416,138 +419,110 @@ const Page = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let generatedContent = "";
+      const data = await response.json();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-
-          try {
-            const data = JSON.parse(line);
-
-            if (data.type === "provider") {
-              const newMessageIndex = messages.length + 1;
-              setMessageMetadata((prevMetadata) => {
-                const newMetadata = {
-                  ...prevMetadata,
-                  [newMessageIndex]: { model: selectedModel, provider: data.provider },
-                };
-                latestMetadataRef.current = newMetadata;
-                return newMetadata;
-              });
-            } else if (data.type === "chunk") {
-              generatedContent += data.content;
-              setGeneratingMessage({ role: "assistant", content: generatedContent });
-              scrollToBottom();
-            } else if (data.type === "done") {
-              setIsGenerating(false);
-              let fullResponse = data.content || generatedContent;
-
-              if (fullResponse == null) {
-                fullResponse = "";
-              }
-
-              if (fullResponse) {
-                fullResponse = fullResponse.trimEnd();
-              }
-
-              const newMessages = [
-                ...messages,
-                { role: "user", content: message },
-                { role: "assistant", content: fullResponse },
-              ];
-              setMessages(newMessages);
-              setGeneratingMessage({});
-
-              scrollToBottom();
-
-              const time = stopTimer();
-
-              await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    message: {
-                      index: newMessages.length,
-                      role: newMessages[newMessages.length - 1].role,
-                      content: newMessages[newMessages.length - 1].content,
-                      model: latestMetadataRef.current[newMessages.length - 1]?.model,
-                      provider:
-                        latestMetadataRef.current[newMessages.length - 1]?.provider,
-                      timeItTook: time,
-                    },
-                  }),
-                }
-              );
-
-              // Refresh chat list to get updated title
-              fetchAndCategorizeChats(userId);
-            } else if (data.type === "error") {
-              setIsGenerating(false);
-              console.error("Error from server:", data.message);
-              toast.error(data.message || "An error occurred", { position: "top-right" });
-              setGeneratingMessage({});
-            } else if (data.type === "image") {
-              setIsGenerating(false);
-              const imageUrl = data.url || data.content;
-
-              const newMessages = [
-                ...messages,
-                { role: "user", content: message },
-                { role: "assistant", content: imageUrl },
-              ];
-              setMessages(newMessages);
-              setGeneratingMessage({});
-
-              scrollToBottom();
-
-              const time = stopTimer();
-
-              await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    message: {
-                      index: newMessages.length,
-                      role: newMessages[newMessages.length - 1].role,
-                      content: newMessages[newMessages.length - 1].content,
-                      model: latestMetadataRef.current[newMessages.length - 1]?.model,
-                      provider:
-                        latestMetadataRef.current[newMessages.length - 1]?.provider,
-                      timeItTook: time,
-                    },
-                  }),
-                }
-              );
-            }
-          } catch (parseError) {
-            console.error("Error parsing line:", line, parseError);
-          }
-        }
+      if (data.error) {
+        throw new Error(data.error);
       }
-    } catch (error) {
-      console.error("Error streaming message:", error);
+
       setIsGenerating(false);
-      toast.error("Failed to send message. Please try again.", { position: "top-right" });
-      setGeneratingMessage({});
+      const time = stopTimer();
+
+      // Update metadata
+      const newMessageIndex = messages.length + 2; // +1 for user message, +1 for assistant message
+      setMessageMetadata((prevMetadata) => {
+        const newMetadata = {
+          ...prevMetadata,
+          [newMessageIndex]: { 
+            model: data.model || selectedModel, 
+            provider: data.provider || selectedProvider 
+          },
+        };
+        latestMetadataRef.current = newMetadata;
+        return newMetadata;
+      });
+
+      // Handle image response
+      if (data.type === "image") {
+        const newMessages = [
+          ...messages,
+          { role: "user", content: message },
+          { role: "assistant", content: data.content },
+        ];
+        setMessages(newMessages);
+        scrollToBottom();
+
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message: {
+                index: newMessages.length,
+                role: "assistant",
+                content: data.content,
+                model: data.model,
+                provider: data.provider,
+                timeItTook: time,
+              },
+            }),
+          }
+        );
+
+        // Refresh chat list
+        fetchAndCategorizeChats(userId);
+        return;
+      }
+
+      // Handle text response
+      if (data.type === "text" && data.content) {
+        const fullResponse = data.content.trimEnd();
+        const newMessages = [
+          ...messages,
+          { role: "user", content: message },
+          { role: "assistant", content: fullResponse },
+        ];
+        setMessages(newMessages);
+        scrollToBottom();
+
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message: {
+                index: newMessages.length,
+                role: "assistant",
+                content: fullResponse,
+                model: data.model,
+                provider: data.provider,
+                timeItTook: time,
+              },
+            }),
+          }
+        );
+
+        // Refresh chat list to get updated title
+        fetchAndCategorizeChats(userId);
+      } else {
+        throw new Error("Invalid response from server");
+      }
+
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setIsGenerating(false);
+      toast.error(error.message || "Failed to send message. Please try again.", { 
+        position: "top-right" 
+      });
+      
+      // Remove the user message that was optimistically added
+      setMessages((prevMessages) => prevMessages.slice(0, -1));
     }
   };
 

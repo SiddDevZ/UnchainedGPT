@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { stream } from 'hono/streaming';
 import fetch from 'node-fetch';
 import { chatModel } from '../models/chats.js';
 import { auth } from './utils/dummy/test/analytics.js';
@@ -36,7 +35,11 @@ router.post('/', async (c) => {
 
     // Log analytics
     if (username) {
-      auth(username, message, model, provider);
+      try {
+        auth(username, message, model, provider);
+      } catch (err) {
+        console.error('Analytics error:', err);
+      }
     }
 
     const selectedModel = model || 'gpt-4o';
@@ -47,146 +50,137 @@ router.post('/', async (c) => {
     if (imageModels.includes(selectedModel)) {
       const imageUrl = await generateImage(message, selectedModel, selectedProvider);
       
-      if (imageUrl) {
-        history.push({ role: 'assistant', content: imageUrl });
-        conversationHistories.set(chatId, history);
-        
-        // Save to database
-        await saveMessagesToChat(chatId, history, selectedModel, selectedProvider, username);
-        
-        return c.json({ 
-          type: 'image',
-          content: imageUrl,
-          provider: selectedProvider,
-          done: true 
-        });
-      } else {
+      if (!imageUrl) {
         return c.json({ error: 'Failed to generate image' }, 500);
       }
+
+      history.push({ role: 'assistant', content: imageUrl });
+      conversationHistories.set(chatId, history);
+      
+      // Save to database
+      await saveMessagesToChat(chatId, history, selectedModel, selectedProvider);
+      
+      return c.json({ 
+        type: 'image',
+        content: imageUrl,
+        provider: selectedProvider,
+        model: selectedModel
+      });
     }
 
-    // Handle text generation with streaming
-    return stream(c, async (stream) => {
-      try {
-        const payload = {
-          model: selectedModel,
-          messages: history,
-          provider: selectedProvider,
-          stream: true
-        };
+    // Handle text generation - wait for complete response
+    const fullResponse = await generateTextResponse(history, selectedModel, selectedProvider);
+    
+    if (!fullResponse) {
+      return c.json({ error: 'Failed to generate response' }, 500);
+    }
 
-        if (selectedProvider === 'PollinationsAI') {
-          payload.api_key = 'q05DlCSgPBK2uvJZ';
-        }
-
-        const response = await fetch('https://api.siddz.com/chatapi/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          await stream.write(JSON.stringify({ 
-            type: 'error', 
-            content: 'Provider failed to respond' 
-          }) + '\n');
-          return;
-        }
-
-        // Send provider info
-        await stream.write(JSON.stringify({ 
-          type: 'provider', 
-          content: selectedProvider 
-        }) + '\n');
-
-        let fullResponse = '';
-        let buffer = '';
-
-        response.body.on('data', async (chunk) => {
-          try {
-            buffer += chunk.toString();
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-
-            for (const line of lines) {
-              if (line.trim() === '' || !line.startsWith('data: ')) continue;
-              
-              const data = line.slice(6);
-              if (data === '[DONE]') {
-                history.push({ role: 'assistant', content: fullResponse });
-                conversationHistories.set(chatId, history);
-                
-                // Save to database
-                await saveMessagesToChat(chatId, history, selectedModel, selectedProvider, username);
-                
-                await stream.write(JSON.stringify({ 
-                  type: 'done', 
-                  content: fullResponse 
-                }) + '\n');
-                return;
-              }
-
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices?.[0]?.delta?.content;
-                
-                if (content) {
-                  fullResponse += content;
-                  await stream.write(JSON.stringify({ 
-                    type: 'chunk', 
-                    content: content 
-                  }) + '\n');
-                }
-              } catch (parseError) {
-                console.error('Parse error:', parseError);
-              }
-            }
-          } catch (error) {
-            console.error('Chunk processing error:', error);
-          }
-        });
-
-        response.body.on('end', async () => {
-          if (fullResponse) {
-            history.push({ role: 'assistant', content: fullResponse });
-            conversationHistories.set(chatId, history);
-            
-            // Save to database
-            await saveMessagesToChat(chatId, history, selectedModel, selectedProvider, username);
-          }
-          await stream.write(JSON.stringify({ 
-            type: 'done', 
-            content: fullResponse 
-          }) + '\n');
-        });
-
-        response.body.on('error', async (error) => {
-          console.error('Stream error:', error);
-          await stream.write(JSON.stringify({ 
-            type: 'error', 
-            content: 'Stream error occurred' 
-          }) + '\n');
-        });
-
-      } catch (error) {
-        console.error('Error in stream handler:', error);
-        await stream.write(JSON.stringify({ 
-          type: 'error', 
-          content: error.message 
-        }) + '\n');
-      }
+    history.push({ role: 'assistant', content: fullResponse });
+    conversationHistories.set(chatId, history);
+    
+    // Save to database
+    await saveMessagesToChat(chatId, history, selectedModel, selectedProvider);
+    
+    return c.json({ 
+      type: 'text',
+      content: fullResponse,
+      provider: selectedProvider,
+      model: selectedModel
     });
 
   } catch (error) {
     console.error('Error in streamMessage:', error);
-    return c.json({ error: 'Internal server error' }, 500);
+    return c.json({ error: 'Internal server error', details: error.message }, 500);
   }
 });
 
-async function saveMessagesToChat(chatId, history, model, provider, username) {
+async function generateTextResponse(history, model, provider) {
+  try {
+    const payload = {
+      model: model,
+      messages: history,
+      provider: provider,
+      stream: true
+    };
+
+    if (provider === 'PollinationsAI') {
+      payload.api_key = 'q05DlCSgPBK2uvJZ';
+    }
+
+    const response = await fetch('https://api.siddz.com/chatapi/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload),
+      timeout: 120000 // 2 minute timeout
+    });
+
+    if (!response.ok) {
+      console.error('API response not OK:', response.status, response.statusText);
+      return null;
+    }
+
+    let fullResponse = '';
+    let buffer = '';
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Request timeout'));
+      }, 120000);
+
+      response.body.on('data', (chunk) => {
+        try {
+          buffer += chunk.toString();
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim() === '' || !line.startsWith('data: ')) continue;
+            
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              clearTimeout(timeout);
+              resolve(fullResponse || null);
+              return;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content;
+              
+              if (content) {
+                fullResponse += content;
+              }
+            } catch (parseError) {
+              console.error('Parse error:', parseError);
+            }
+          }
+        } catch (error) {
+          console.error('Chunk processing error:', error);
+        }
+      });
+
+      response.body.on('end', () => {
+        clearTimeout(timeout);
+        resolve(fullResponse || null);
+      });
+
+      response.body.on('error', (error) => {
+        clearTimeout(timeout);
+        console.error('Stream error:', error);
+        reject(error);
+      });
+    });
+
+  } catch (error) {
+    console.error('Error generating text response:', error);
+    return null;
+  }
+}
+
+async function saveMessagesToChat(chatId, history, model, provider) {
   try {
     const messageObjects = history.map((msg, index) => ({
       message_id: `${chatId}_${index}`,
@@ -224,10 +218,12 @@ async function generateImage(prompt, model, provider) {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      timeout: 60000 // 1 minute timeout for images
     });
 
     if (!response.ok) {
+      console.error('Image generation failed:', response.status, response.statusText);
       return null;
     }
 
@@ -237,7 +233,6 @@ async function generateImage(prompt, model, provider) {
     console.error('Image generation error:', error);
     return null;
   }
-  
 }
 
 export default router;
