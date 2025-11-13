@@ -4,39 +4,35 @@ import fetch from 'node-fetch'
 
 const router = new Hono()
 
-export default (io) => {
-  router.post('/', async (c) => {
-    const { prompt, user_id } = await c.req.json()
+router.post('/', async (c) => {
+  const { prompt, user_id } = await c.req.json()
 
-    if (!prompt || !user_id) {
-      return c.json({ error: 'Missing required fields' }, 400)
-    }
+  if (!prompt || !user_id) {
+    return c.json({ error: 'Missing required fields' }, 400)
+  }
 
-    try {
-      // Create a new chat with a default title
-      const newChat = new chatModel({
-        _id: new Date().getTime().toString(),
-        title: 'New Chat',
-        user_id,
-        messages: []
-      })
+  try {
+    // Create a new chat with a default title
+    const newChat = new chatModel({
+      _id: new Date().getTime().toString(),
+      title: 'New Chat',
+      user_id,
+      messages: []
+    })
 
-      await newChat.save()
+    await newChat.save()
 
-      // fire title generation in background
-      generateAndUpdateTitle(newChat._id, prompt, io).catch(console.error)
+    // fire title generation in background
+    generateAndUpdateTitle(newChat._id, prompt).catch(console.error)
 
-      return c.json({ chat_id: newChat._id }, 201)
-    } catch (error) {
-      console.error('Error creating chat:', error)
-      return c.json({ error: 'Internal server error' }, 500)
-    }
-  })
+    return c.json({ chat_id: newChat._id }, 201)
+  } catch (error) {
+    console.error('Error creating chat:', error)
+    return c.json({ error: 'Internal server error' }, 500)
+  }
+})
 
-  return router
-}
-
-async function generateAndUpdateTitle(chatId, prompt, io) {
+async function generateAndUpdateTitle(chatId, prompt) {
   const defaultModel = 'gpt-5-nano'
   const providers = ['PollinationsAI']
   let generatedTitle = 'New Chat'
@@ -90,12 +86,11 @@ async function generateAndUpdateTitle(chatId, prompt, io) {
 
   try {
     await chatModel.findByIdAndUpdate(chatId, { title: generatedTitle })
-
-    // notify clients
-    io.emit('chatTitleUpdated', { chatId, title: generatedTitle })
   } catch (error) {
     console.error('Error updating title in database:', error)
   }
 
   return generatedTitle
 }
+
+export default router

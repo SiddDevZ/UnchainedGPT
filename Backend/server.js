@@ -1,14 +1,11 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { Server } from "socket.io";
 import { serve } from "@hono/node-server";
 import mongoose from "mongoose";
 import { config } from "dotenv";
 
 config();
 
-import { ChatBot } from "./routes/response.js";
-import { ImageBot } from "./routes/image.js";
 import googleLoginRoute from "./routes/googleLogin.js";
 import verifyRoute from "./routes/verify.js";
 import discordLoginRoute from "./routes/discordLogin.js";
@@ -19,7 +16,7 @@ import messageRoute from "./routes/message.js";
 import fetchChatsRoute from "./routes/fetchChats.js";
 import fetchChatRoute from "./routes/fetchChat.js";
 import v1Route from "./routes/v1.js";
-import { auth } from "./routes/utils/dummy/test/analytics.js";
+import streamMessageRoute from "./routes/streamMessage.js";
 
 const app = new Hono();
 
@@ -40,12 +37,17 @@ mongoose
 const port = process.env.PORT || 3001;
 
 app.get("/", (c) => c.text("Hello World!"));
-// app.route('/api/response', responseRoute)
 app.route("/api/googleauth", googleLoginRoute);
 app.route("/api/verify", verifyRoute);
 app.route("/api/discordauth", discordLoginRoute);
 app.route("/api/register", registerRoute);
 app.route("/api/login", loginRoute);
+app.route("/api/chat", chatRoute);
+app.route("/api/message", messageRoute);
+app.route("/api/streammessage", streamMessageRoute);
+app.route("/api/fetchchats", fetchChatsRoute);
+app.route("/api/fetchchat", fetchChatRoute);
+app.route("/v1", v1Route); // OpenAI-compatible API endpoint
 
 const server = serve({
   fetch: app.fetch,
@@ -54,114 +56,4 @@ const server = serve({
 
 console.log(`Server running at http://localhost:${port}`);
 
-const io = new Server(server, {
-  path: "/unchainedgpt/socket.io",
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-  },
-});
-
-app.route("/api/chat", chatRoute(io)); // Pass io to chatRoute
-app.route("/api/message", messageRoute);
-app.route("/api/fetchchats", fetchChatsRoute);
-app.route("/api/fetchchat", fetchChatRoute);
-app.route("/v1", v1Route); // OpenAI-compatible API endpoint
-
-const chatbot = new ChatBot();
-const imagebot = new ImageBot();
-const conversationHistories = new Map();
-
-async function getUserInfo(socket) {
-  return new Promise((resolve) => {
-    socket.emit("requestUserInfo");
-
-    socket.once("provideUserInfo", (userInfo) => {
-      resolve(userInfo);
-    });
-
-    setTimeout(() => {
-      resolve({ username: "Unknown User" });
-    }, 3000);
-  });
-}
-
-io.on("connection", (socket) => {
-  console.log("A user connected");
-
-  socket.on("message", async ({ message, model, provider, chatId }) => {
-    // console.log(provider)
-    // console.log(conversationHistories)
-    // console.log(message)
-    // console.log(chatId)
-    if (!chatId) {
-      socket.emit("error", "Chat ID is required");
-      return;
-    }
-
-    let history;
-    if (!conversationHistories.has(chatId)) {
-      socket.emit("requestHistory", chatId);
-
-      history = await new Promise((resolve) => {
-        socket.once("provideHistory", (data) => {
-          if (data && Array.isArray(data.history)) {
-            resolve(data.history);
-          } else {
-            resolve([]);
-          }
-        });
-
-        setTimeout(() => {
-          resolve([]);
-        }, 5000);
-      });
-
-      conversationHistories.set(chatId, history);
-    } else {
-      history = conversationHistories.get(chatId);
-    }
-    const userInfo = await getUserInfo(socket);
-    const username = userInfo.username || "Unknown User";
-    auth(username, message, model, provider);
-
-    try {
-      history.push({ role: "user", content: message });
-
-      let fullResponse;
-      const imageModels = ["flux", "flux-pro", "midjourney", "flux-dev"];
-      if (imageModels.includes(model)) {
-        fullResponse = await imagebot.generateImage(
-          socket,
-          message,
-          model,
-          provider
-        );
-      } else {
-        fullResponse = await chatbot.getResponse(
-          socket,
-          model,
-          provider,
-          history
-        );
-      }
-      if (fullResponse == undefined) {
-        fullResponse =
-          "Error: failed to generate response. Try with another model or provider.";
-      }
-      history.push({ role: "assistant", content: fullResponse });
-      // console.log(fullResponse)
-
-      conversationHistories.set(chatId, history);
-    } catch (error) {
-      console.error("Error processing message:", error);
-      socket.emit("error", error.message);
-    }
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected");
-  });
-});
-
-export { server, io };
+export { server };

@@ -4,7 +4,6 @@ import "remixicon/fonts/remixicon.css";
 import "./page.css";
 import Input from "../../components/Input/Input";
 import { CodeBlock } from "../../components/ui/code-block";
-import io from "socket.io-client";
 import Cookies from "js-cookie";
 import models from "./models";
 import { useParams, usePathname } from "next/navigation";
@@ -19,7 +18,6 @@ const Page = () => {
   const [messages, setMessages] = useState([]);
   const [generatingMessage, setGeneratingMessage] = useState({});
   const [isGenerating, setIsGenerating] = useState(false);
-  const [socket, setSocket] = useState(null);
   const messagesRef = useRef();
   const [autoScroll, setAutoScroll] = useState(true);
   const messagesEndRef = useRef(null);
@@ -316,36 +314,6 @@ const Page = () => {
     scrollToBottom();
   }, [messages, generatingMessage]);
 
-  useEffect(() => {
-    // Ensure this runs only on the client side
-    if (typeof window !== "undefined") {
-      const newSocket = io("https://api.siddz.com/unchainedgpt", {
-        path: "/unchainedgpt/socket.io",
-        transports: ["websocket", "polling"],
-      });
-
-      newSocket.on("connect", () => {
-        console.log("Connected to Socket.IO server on port 3001");
-        setSocket(newSocket);
-      });
-
-      newSocket.on("connect_error", (error) => {
-        console.error("Socket.IO connection error:", error);
-      });
-      newSocket.on("requestUserInfo", () => {
-        newSocket.emit("provideUserInfo", {
-          username: userData.username || "Unknown User",
-          email: userData.email || "",
-          avatar: userData.avatar || ""
-        });
-      });
-
-      return () => {
-        if (newSocket) newSocket.close();
-      };
-    }
-  }, [userData]);
-
   const handleCopy = async (messageId) => {
     const messageToCopy = messages[messageId];
 
@@ -408,16 +376,6 @@ const Page = () => {
       }
     }
 
-    let providers;
-    if (selectedProvider === "Auto") {
-      // Get all providers except "Auto" for the selected model
-      providers = Object.entries(models[selectedModel].providers)
-        .slice(1) // Skip the first entry (Auto)
-        .map(([key, value]) => value.value);
-    } else {
-      providers = [models[selectedModel].providers[selectedProvider].value];
-    }
-
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`, {
       method: "POST",
       headers: {
@@ -432,112 +390,165 @@ const Page = () => {
       }),
     });
 
-    let generatedContent = "";
-    console.log(message, models[selectedModel].value, providers);
-    socket.emit("message", {
-      message,
-      model: models[selectedModel].value,
-      provider: providers,
-      chatId: latestChatIdRef.current || "none",
-    });
-
-    socket.on("requestHistory", (chatIde) => {
-      const filteredMessages = messages.map(({ role, content }) => ({
-        role,
-        content,
-      }));
-
-      socket.emit("provideHistory", { history: filteredMessages });
-    });
-
-    socket.on("requestChatId", () => {
-      console.log("chatid: ", latestChatIdRef.current);
-      socket.emit("provideChatId", { chatId: latestChatIdRef.current });
-    });
-
-    socket.on("chunk", (chunk) => {
-      generatedContent += chunk;
-      setGeneratingMessage({ role: "assistant", content: generatedContent });
-      scrollToBottom();
-    });
-
-    socket.on("chatTitleUpdated", () => {
-      fetchAndCategorizeChats(userId);
-    });
-
-    socket.on("prov", (provider) => {
-      const newMessageIndex = messages.length + 1;
-      setMessageMetadata((prevMetadata) => {
-        const newMetadata = {
-          ...prevMetadata,
-          [newMessageIndex]: { model: selectedModel, provider },
-        };
-        latestMetadataRef.current = newMetadata;
-        return newMetadata;
-      });
-    });
-
-    socket.on("done", async (fullResponse) => {
-      setIsGenerating(false);
-      // console.log("Generated content:", fullResponse);
-      if (fullResponse == null) {
-        fullResponse = "";
-      }
-
-      if (fullResponse) {
-        fullResponse = fullResponse.trimEnd();
-      }
-
-      const newMessages = [
-        ...messages,
-        { role: "user", content: message },
-        { role: "assistant", content: fullResponse },
-      ];
-      setMessages(newMessages);
-      setGeneratingMessage({});
-
-      scrollToBottom();
-
-      try {
-        let currentChatId = latestChatIdRef.current;
-        let content = newMessages[newMessages.length - 1].content;
-        if (content == undefined || content.trim() === "") {
-          content = "";
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/streammessage`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message,
+            model: models[selectedModel].value,
+            provider: selectedProvider === "Auto" 
+              ? Object.entries(models[selectedModel].providers)
+                  .slice(1)
+                  .map(([key, value]) => value.value)
+              : [models[selectedModel].providers[selectedProvider].value],
+            chatId: currentChatId,
+            username: userData.username,
+          }),
         }
+      );
 
-        const time = stopTimer();
-
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: {
-                index: newMessages.length,
-                role: newMessages[newMessages.length - 1].role,
-                content: newMessages[newMessages.length - 1].content,
-                model: latestMetadataRef.current[newMessages.length - 1]?.model,
-                provider:
-                  latestMetadataRef.current[newMessages.length - 1]?.provider,
-                timeItTook: time,
-              },
-            }),
-          }
-        );
-      } catch (error) {
-        console.error("Error storing chat or messages:", error);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      socket.off("chunk");
-      socket.off("done");
-      socket.off("prov");
-      socket.off("requestHistory");
-      socket.off("requestChatId");
-      socket.off("chatTitleUpdated");
-    });
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let generatedContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          try {
+            const data = JSON.parse(line);
+
+            if (data.type === "provider") {
+              const newMessageIndex = messages.length + 1;
+              setMessageMetadata((prevMetadata) => {
+                const newMetadata = {
+                  ...prevMetadata,
+                  [newMessageIndex]: { model: selectedModel, provider: data.provider },
+                };
+                latestMetadataRef.current = newMetadata;
+                return newMetadata;
+              });
+            } else if (data.type === "chunk") {
+              generatedContent += data.content;
+              setGeneratingMessage({ role: "assistant", content: generatedContent });
+              scrollToBottom();
+            } else if (data.type === "done") {
+              setIsGenerating(false);
+              let fullResponse = data.content || generatedContent;
+
+              if (fullResponse == null) {
+                fullResponse = "";
+              }
+
+              if (fullResponse) {
+                fullResponse = fullResponse.trimEnd();
+              }
+
+              const newMessages = [
+                ...messages,
+                { role: "user", content: message },
+                { role: "assistant", content: fullResponse },
+              ];
+              setMessages(newMessages);
+              setGeneratingMessage({});
+
+              scrollToBottom();
+
+              const time = stopTimer();
+
+              await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    message: {
+                      index: newMessages.length,
+                      role: newMessages[newMessages.length - 1].role,
+                      content: newMessages[newMessages.length - 1].content,
+                      model: latestMetadataRef.current[newMessages.length - 1]?.model,
+                      provider:
+                        latestMetadataRef.current[newMessages.length - 1]?.provider,
+                      timeItTook: time,
+                    },
+                  }),
+                }
+              );
+
+              // Refresh chat list to get updated title
+              fetchAndCategorizeChats(userId);
+            } else if (data.type === "error") {
+              setIsGenerating(false);
+              console.error("Error from server:", data.message);
+              toast.error(data.message || "An error occurred", { position: "top-right" });
+              setGeneratingMessage({});
+            } else if (data.type === "image") {
+              setIsGenerating(false);
+              const imageUrl = data.url || data.content;
+
+              const newMessages = [
+                ...messages,
+                { role: "user", content: message },
+                { role: "assistant", content: imageUrl },
+              ];
+              setMessages(newMessages);
+              setGeneratingMessage({});
+
+              scrollToBottom();
+
+              const time = stopTimer();
+
+              await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    message: {
+                      index: newMessages.length,
+                      role: newMessages[newMessages.length - 1].role,
+                      content: newMessages[newMessages.length - 1].content,
+                      model: latestMetadataRef.current[newMessages.length - 1]?.model,
+                      provider:
+                        latestMetadataRef.current[newMessages.length - 1]?.provider,
+                      timeItTook: time,
+                    },
+                  }),
+                }
+              );
+            }
+          } catch (parseError) {
+            console.error("Error parsing line:", line, parseError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error streaming message:", error);
+      setIsGenerating(false);
+      toast.error("Failed to send message. Please try again.", { position: "top-right" });
+      setGeneratingMessage({});
+    }
   };
 
   useLayoutEffect(() => {
