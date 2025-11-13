@@ -10,11 +10,13 @@ const conversationHistories = new Map();
 router.post('/', async (c) => {
   const { message, model, provider, chatId, username } = await c.req.json();
 
+  console.log('Received request:', { message: message?.substring(0, 50), model, provider, chatId, username });
+
   if (!message || !chatId) {
     return c.json({ error: 'Missing required fields' }, 400);
   }
 
-  
+
   try {
     // Get or initialize conversation history
     let history;
@@ -44,7 +46,11 @@ router.post('/', async (c) => {
     }
 
     const selectedModel = model || 'gpt-4o';
-    const selectedProvider = provider || 'PollinationsAI';
+    // Handle provider being an array or string
+    const selectedProvider = Array.isArray(provider) ? provider[0] : (provider || 'PollinationsAI');
+    
+    console.log('Using model:', selectedModel, 'provider:', selectedProvider);
+    
     const imageModels = ['flux', 'flux-pro', 'midjourney', 'flux-dev'];
 
     // Handle image generation
@@ -52,6 +58,7 @@ router.post('/', async (c) => {
       const imageUrl = await generateImage(message, selectedModel, selectedProvider);
       
       if (!imageUrl) {
+        console.error('Image generation returned null');
         return c.json({ error: 'Failed to generate image' }, 500);
       }
 
@@ -70,9 +77,13 @@ router.post('/', async (c) => {
     }
 
     // Handle text generation - wait for complete response
+    console.log('Calling generateTextResponse...');
     const fullResponse = await generateTextResponse(history, selectedModel, selectedProvider);
     
+    console.log('generateTextResponse returned:', fullResponse ? `${fullResponse.length} chars` : 'null');
+    
     if (!fullResponse) {
+      console.error('Text generation returned null or empty response');
       return c.json({ error: 'Failed to generate response' }, 500);
     }
 
@@ -82,6 +93,7 @@ router.post('/', async (c) => {
     // Save to database
     await saveMessagesToChat(chatId, history, selectedModel, selectedProvider);
     
+    console.log('Returning successful response');
     return c.json({ 
       type: 'text',
       content: fullResponse,
@@ -97,6 +109,8 @@ router.post('/', async (c) => {
 
 async function generateTextResponse(history, model, provider) {
   try {
+    console.log('generateTextResponse called with:', { model, provider, historyLength: history.length });
+    
     const payload = {
       model: model,
       messages: history,
@@ -108,6 +122,8 @@ async function generateTextResponse(history, model, provider) {
       payload.api_key = 'q05DlCSgPBK2uvJZ';
     }
 
+    console.log('Sending request to API with payload:', JSON.stringify(payload).substring(0, 200));
+
     const response = await fetch('https://api.siddz.com/chatapi/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -118,21 +134,27 @@ async function generateTextResponse(history, model, provider) {
       timeout: 120000 // 2 minute timeout
     });
 
+    console.log('API response status:', response.status, response.statusText);
+
     if (!response.ok) {
-      console.error('API response not OK:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('API response not OK:', response.status, response.statusText, errorText);
       return null;
     }
 
     let fullResponse = '';
     let buffer = '';
+    let chunkCount = 0;
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
+        console.error('Request timeout after 120s');
         reject(new Error('Request timeout'));
       }, 120000);
 
       response.body.on('data', (chunk) => {
         try {
+          chunkCount++;
           buffer += chunk.toString();
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
@@ -142,6 +164,7 @@ async function generateTextResponse(history, model, provider) {
             
             const data = line.slice(6);
             if (data === '[DONE]') {
+              console.log('Stream complete. Total chunks:', chunkCount, 'Response length:', fullResponse.length);
               clearTimeout(timeout);
               resolve(fullResponse || null);
               return;
@@ -155,7 +178,7 @@ async function generateTextResponse(history, model, provider) {
                 fullResponse += content;
               }
             } catch (parseError) {
-              console.error('Parse error:', parseError);
+              console.error('Parse error:', parseError, 'Line:', line);
             }
           }
         } catch (error) {
@@ -164,6 +187,7 @@ async function generateTextResponse(history, model, provider) {
       });
 
       response.body.on('end', () => {
+        console.log('Stream ended. Total chunks:', chunkCount, 'Response length:', fullResponse.length);
         clearTimeout(timeout);
         resolve(fullResponse || null);
       });
