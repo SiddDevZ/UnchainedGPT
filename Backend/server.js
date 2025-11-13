@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Server } from "socket.io";
-import { serve } from "@hono/node-server";
+import http from "http";
 import mongoose from "mongoose";
 import { config } from "dotenv";
 
@@ -29,10 +29,20 @@ const dbUrl = process.env.DATABASE_URL;
 mongoose.connect(dbUrl);
 
 const port = process.env.PORT || 3001;
+const server = http.createServer(async (req, res) => {
+  const response = await app.fetch(req, res);
 
-const server = serve({
-  fetch: app.fetch,
-  port,
+  // Write status
+  res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
+
+  // Write body
+  const body = await response.text();
+  res.end(body);
+});
+
+
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
 
 const io = new Server(server, {
@@ -150,7 +160,5 @@ io.on("connection", (socket) => {
     console.log("User disconnected");
   });
 });
-
-console.log(`Server running at http://localhost:${port}`);
 
 export { server };
