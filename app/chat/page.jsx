@@ -428,9 +428,6 @@ const Page = () => {
       setIsGenerating(false);
       const time = stopTimer();
 
-      // Calculate correct message index (current messages + user message + assistant message)
-      const assistantMessageIndex = messages.length + 2;
-
       // Handle image response
       if (data.type === "image") {
         const newMessages = [
@@ -438,13 +435,17 @@ const Page = () => {
           { role: "user", content: message },
           { role: "assistant", content: data.content },
         ];
+        
+        // The assistant message will be at index newMessages.length - 1
+        const assistantIndex = newMessages.length - 1;
+        
         setMessages(newMessages);
         
-        // Update metadata for the assistant message
+        // Update metadata for the assistant message using the actual array index
         setMessageMetadata((prevMetadata) => {
           const newMetadata = {
             ...prevMetadata,
-            [assistantMessageIndex]: { 
+            [assistantIndex]: { 
               model: data.model || selectedModel, 
               provider: data.provider || selectedProvider 
             },
@@ -488,13 +489,17 @@ const Page = () => {
           { role: "user", content: message },
           { role: "assistant", content: fullResponse },
         ];
+        
+        // The assistant message will be at index newMessages.length - 1
+        const assistantIndex = newMessages.length - 1;
+        
         setMessages(newMessages);
         
-        // Update metadata for the assistant message
+        // Update metadata for the assistant message using the actual array index
         setMessageMetadata((prevMetadata) => {
           const newMetadata = {
             ...prevMetadata,
-            [assistantMessageIndex]: { 
+            [assistantIndex]: { 
               model: data.model || selectedModel, 
               provider: data.provider || selectedProvider 
             },
