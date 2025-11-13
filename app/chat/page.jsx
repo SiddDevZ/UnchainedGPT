@@ -428,19 +428,8 @@ const Page = () => {
       setIsGenerating(false);
       const time = stopTimer();
 
-      // Update metadata
-      const newMessageIndex = messages.length + 2; // +1 for user message, +1 for assistant message
-      setMessageMetadata((prevMetadata) => {
-        const newMetadata = {
-          ...prevMetadata,
-          [newMessageIndex]: { 
-            model: data.model || selectedModel, 
-            provider: data.provider || selectedProvider 
-          },
-        };
-        latestMetadataRef.current = newMetadata;
-        return newMetadata;
-      });
+      // Calculate correct message index (current messages + user message + assistant message)
+      const assistantMessageIndex = messages.length + 2;
 
       // Handle image response
       if (data.type === "image") {
@@ -450,6 +439,20 @@ const Page = () => {
           { role: "assistant", content: data.content },
         ];
         setMessages(newMessages);
+        
+        // Update metadata for the assistant message
+        setMessageMetadata((prevMetadata) => {
+          const newMetadata = {
+            ...prevMetadata,
+            [assistantMessageIndex]: { 
+              model: data.model || selectedModel, 
+              provider: data.provider || selectedProvider 
+            },
+          };
+          latestMetadataRef.current = newMetadata;
+          return newMetadata;
+        });
+        
         scrollToBottom();
 
         await fetch(
@@ -486,6 +489,20 @@ const Page = () => {
           { role: "assistant", content: fullResponse },
         ];
         setMessages(newMessages);
+        
+        // Update metadata for the assistant message
+        setMessageMetadata((prevMetadata) => {
+          const newMetadata = {
+            ...prevMetadata,
+            [assistantMessageIndex]: { 
+              model: data.model || selectedModel, 
+              provider: data.provider || selectedProvider 
+            },
+          };
+          latestMetadataRef.current = newMetadata;
+          return newMetadata;
+        });
+        
         scrollToBottom();
 
         await fetch(
@@ -680,7 +697,7 @@ const Page = () => {
                       <div className="flex items-center space-x-2">
                         <i className="ri-ai-generate text-[#c69326] text-lg"></i>
                         <span className="text-[#a0a0a0] font-semibold">
-                          GPT-4o
+                          GPT-5.1
                         </span>
                         <span className="text-[#8e8e8e] text-xs">
                           with Pollinations AI

@@ -7,6 +7,23 @@ const router = new Hono();
 
 const conversationHistories = new Map();
 
+// Map provider values to display names
+const providerDisplayNames = {
+  'PollinationsAI': 'Pollinations',
+  'Blackbox': 'Blackbox',
+  'DarkAI': 'DarkAI',
+  'Copilot': 'Copilot',
+  'Jmuz': 'Jmuz',
+  'Liaobots': 'Liaobots',
+  'PuterJS': 'PuterJS',
+  'DeepInfraChat': 'DeepInfra',
+  'DDG': 'DuckDuck',
+};
+
+function getProviderDisplayName(provider) {
+  return providerDisplayNames[provider] || provider;
+}
+
 router.post('/', async (c) => {
   const { message, model, provider, chatId, username } = await c.req.json();
 
@@ -71,7 +88,7 @@ router.post('/', async (c) => {
       return c.json({ 
         type: 'image',
         content: imageUrl,
-        provider: selectedProvider,
+        provider: getProviderDisplayName(selectedProvider),
         model: selectedModel
       });
     }
@@ -97,7 +114,7 @@ router.post('/', async (c) => {
     return c.json({ 
       type: 'text',
       content: fullResponse,
-      provider: selectedProvider,
+      provider: getProviderDisplayName(selectedProvider),
       model: selectedModel
     });
 
