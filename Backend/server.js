@@ -1,10 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Server } from "socket.io";
-import http from "http";
+import { serve } from "@hono/node-server";
 import mongoose from "mongoose";
 import { config } from "dotenv";
-import { Readable } from "stream";
 
 config();
 
@@ -27,11 +26,19 @@ const app = new Hono();
 app.use("*", cors());
 
 const dbUrl = process.env.DATABASE_URL;
-mongoose.connect(dbUrl);
+
+mongoose
+  .connect(dbUrl)
+  .then(() => {
+    console.log("Database connected successfully!");
+  })
+  .catch((error) => {
+    console.error("Database connection failed:", error);
+    process.exit(1);
+  });
 
 const port = process.env.PORT || 3001;
 
-// Set up routes first
 app.get("/", (c) => c.text("Hello World!"));
 // app.route('/api/response', responseRoute)
 app.route("/api/googleauth", googleLoginRoute);
@@ -40,47 +47,9 @@ app.route("/api/discordauth", discordLoginRoute);
 app.route("/api/register", registerRoute);
 app.route("/api/login", loginRoute);
 
-// Create server and Socket.IO
-const server = http.createServer(async (req, res) => {
-  const protocol = req.socket.encrypted ? "https" : "http";
-  const host = req.headers.host || `localhost:${port}`;
-  const url = `${protocol}://${host}${req.url}`;
-
-  // Build proper Fetch Headers
-  const headers = new Headers();
-  for (const [key, value] of Object.entries(req.headers)) {
-    if (Array.isArray(value)) {
-      value.forEach((v) => headers.append(key, v));
-    } else if (value !== undefined) {
-      headers.append(key, value);
-    }
-  }
-
-  // Convert body
-  let body = null;
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    body = Readable.toWeb(req);
-  }
-
-  // Create real Fetch Request
-  const request = new Request(url, {
-    method: req.method,
-    headers,
-    body,
-    duplex: "half",
-  });
-
-  const response = await app.fetch(request);
-
-  // Write status/headers
-  res.writeHead(
-    response.status,
-    Object.fromEntries(response.headers.entries())
-  );
-
-  // Pipe body
-  const text = await response.text();
-  res.end(text);
+const server = serve({
+  fetch: app.fetch,
+  port,
 });
 
 const io = new Server(server, {
@@ -90,7 +59,6 @@ const io = new Server(server, {
   },
 });
 
-// Set up routes that need io
 app.route("/api/chat", chatRoute(io)); // Pass io to chatRoute
 app.route("/api/message", messageRoute);
 app.route("/api/fetchchats", fetchChatsRoute);
@@ -193,8 +161,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+console.log(`Server running at http://localhost:${port}`);
 
 export { server };
