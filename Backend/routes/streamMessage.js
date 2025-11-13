@@ -14,6 +14,7 @@ router.post('/', async (c) => {
     return c.json({ error: 'Missing required fields' }, 400);
   }
 
+  
   try {
     // Get or initialize conversation history
     let history;
