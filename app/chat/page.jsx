@@ -517,6 +517,25 @@ const Page = () => {
     selectedModel,
     selectedProvider
   ) => {
+    // Ensure we have a valid model - use llama as fallback
+    let modelToUse = selectedModel;
+    if (!modelToUse || !availableModels[modelToUse]) {
+      modelToUse = 'meta-llama/llama-3.3-70b-instruct:free';
+      if (!availableModels[modelToUse]) {
+        // Fall back to first available model
+        modelToUse = Object.keys(availableModels)[0];
+      }
+      if (modelToUse) {
+        setSelectedModel(modelToUse);
+        localStorage.setItem('selectedModel', modelToUse);
+      }
+    }
+    
+    if (!modelToUse || !availableModels[modelToUse]) {
+      toast.error("No model available. Please try again.", { position: "top-right" });
+      return;
+    }
+
     setIsGenerating(true);
     startTimer();
 
@@ -588,12 +607,12 @@ const Page = () => {
           },
           body: JSON.stringify({
             message,
-            model: availableModels[selectedModel].value,
+            model: availableModels[modelToUse].value,
             provider: selectedProvider === "Auto" 
-              ? Object.entries(availableModels[selectedModel].providers)
+              ? Object.entries(availableModels[modelToUse].providers)
                   .slice(1)
                   .map(([key, value]) => value.value)
-              : [availableModels[selectedModel].providers[selectedProvider].value],
+              : [availableModels[modelToUse].providers[selectedProvider].value],
             chatId: currentChatId,
             username: userData.username,
           }),
@@ -868,21 +887,22 @@ const Page = () => {
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef(null);
-  const [thinkingDots, setThinkingDots] = useState("");
+  const thinkingDotsRef = useRef("");
+  const [thinkingDotsDisplay, setThinkingDotsDisplay] = useState("");
 
   useEffect(() => {
     if (isGenerating) {
       const interval = setInterval(() => {
-        setThinkingDots((prev) => {
-          if (prev === "") return ".";
-          if (prev === ".") return "..";
-          if (prev === "..") return "...";
-          return "";
-        });
+        thinkingDotsRef.current = thinkingDotsRef.current === "" ? "." 
+          : thinkingDotsRef.current === "." ? ".." 
+          : thinkingDotsRef.current === ".." ? "..." 
+          : "";
+        setThinkingDotsDisplay(thinkingDotsRef.current);
       }, 280);
       return () => clearInterval(interval);
     } else {
-      setThinkingDots("");
+      thinkingDotsRef.current = "";
+      setThinkingDotsDisplay("");
     }
   }, [isGenerating]);
 
@@ -1188,7 +1208,7 @@ const Page = () => {
                   <div className="px-5 py-3 rounded-3xl bg-[#1a1a1a]">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white/20 border-t-amber-400/60 rounded-full animate-spin"></div>
-                      <span className="text-white/50 text-sm">Thinking{thinkingDots}</span>
+                      <span className="text-white/50 text-sm">Thinking{thinkingDotsDisplay}</span>
                     </div>
                   </div>
                 </div>
