@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, memo } from "react";
 import "remixicon/fonts/remixicon.css";
 import "./page.css";
 import { CodeBlock } from "../../components/ui/code-block";
@@ -796,8 +796,8 @@ const Page = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // Model dropdown component
-  const ModelDropdown = ({ isOpen, onToggle }) => {
+  // Model dropdown component - memoized to prevent re-renders
+  const ModelDropdown = useMemo(() => memo(({ isOpen, onToggle }) => {
     const dropdownRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [isClosing, setIsClosing] = useState(false);
@@ -888,7 +888,7 @@ const Page = () => {
         )}
       </div>
     );
-  };
+  }), [availableModels, selectedModel]);
 
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
