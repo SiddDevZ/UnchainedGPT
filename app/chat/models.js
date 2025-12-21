@@ -1,14 +1,9 @@
 const models = {
-  "GPT-5": {
-    display: "GPT-5",
-    value: "gpt-5-nano",
+  "Gemini 2.0 Flash Lite (Free)": {
+    display: "Gemini 2.0 Flash Lite",
+    value: "meta-llama/llama-3.1-405b-instruct:free",
     providers: {
-      Auto: { display: "Auto", value: "auto" },
-      "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
-      // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
-      // "Dark AI": { display: "DarkAI", value: "DarkAI" },
-      // "Copilot": { display: "Copilot", value: "Copilot" },
-      // "Jmuz": {display: "Jmuz", value: "Jmuz" },
+      OpenRouter: { display: "OpenRouter", value: "OpenRouter" },
     },
   },
   // "Claude 4 Sonnet": {
@@ -33,25 +28,18 @@ const models = {
   //     "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
   //   },
   // },
-  "o4-mini": {
-    display: "o4-mini",
-    value: "o4-mini",
+  "DeepSeek R1 (Free)": {
+    display: "DeepSeek R1",
+    value: "deepseek/deepseek-r1:free",
     providers: {
-      Auto: { display: "Auto", value: "auto" },
-      // "DeepInfra Chat": { display: "DeepInfra", value: "DeepInfraChat" },
-      // "Blackbox AI": { display: "Blackbox", value: "Blackbox" },
-      // "PuterJS": { display: "PuterJS", value: "PuterJS" },
-      "Pollinations AI": { display: "Pollinations", value: "PollinationsAI" },
-      // "DuckDuck": { display: "DuckDuck", value: "DDG" },
+      OpenRouter: { display: "OpenRouter", value: "OpenRouter" },
     },
   },
-  "Evil Roleplay": {
-    display: "Evil",
-    value: "evil",
+  "DeepSeek V3 (Free)": {
+    display: "DeepSeek V3",
+    value: "deepseek/deepseek-chat:free",
     providers: {
-      Auto: { display: "Auto", value: "auto" },
-      // "TypeGPT": { display: "TypeGPT", value: "TypeGPT" },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
+      OpenRouter: { display: "OpenRouter", value: "OpenRouter" },
     },
   },
   // "Gemini 2.5 Thinking": {
@@ -63,26 +51,18 @@ const models = {
   //     PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
   //   },
   // },
-  "LLaMA 3.3 70B": {
-    display: "LLaMA 3.3",
-    value: "llama-3.3-70b",
+  "Llama 3.3 70B (Free)": {
+    display: "Llama 3.3 70B",
+    value: "meta-llama/llama-3.3-70b-instruct:free",
     providers: {
-      Auto: { display: "Auto", value: "auto" },
-      // "DeepInfraChat": { display: "DeepInfra", value: "DeepInfraChat" },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-      LambdaChat: { display: "LambdaChat", value: "LambdaChat" },
+      OpenRouter: { display: "OpenRouter", value: "OpenRouter" },
     },
   },
-  "Deepseek r1": {
-    display: "Deepseek r1",
-    value: "deepseek-r1",
+  "GPT-4o": {
+    display: "GPT-4o",
+    value: "openai/gpt-4o",
     providers: {
-      Auto: { display: "Auto", value: "auto" },
-      "LambdaChat": {display: "LambdaChat", value: "LambdaChat" },
-      // "DeepInfraChat": { display: "DeepInfra", value: "DeepInfraChat" },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsAI" },
-      // Glider: { display: "Glider", value: "Glider" },
-      // TypeGPT: { display: "TypeGPT", value: "TypeGPT" },
+      OpenRouter: { display: "OpenRouter", value: "OpenRouter" },
     },
   },
   // "GPT Image": {
@@ -108,13 +88,11 @@ const models = {
   //     PollinationsAI: { display: "PollinationsAI", value: "PollinationsImage" },
   //   },
   // },
-  MidJourney: {
-    display: "MidJourney",
-    value: "midjourney",
+  "Claude 3.5 Sonnet": {
+    display: "Claude 3.5 Sonnet",
+    value: "anthropic/claude-3.5-sonnet",
     providers: {
-      Auto: { display: "Auto", value: "auto" },
-      // Airforce: { display: "Airforce", value: "Airforce" },
-      PollinationsAI: { display: "PollinationsAI", value: "PollinationsImage" },
+      OpenRouter: { display: "OpenRouter", value: "OpenRouter" },
     },
   },
   // "grok-3": {

@@ -2,29 +2,70 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import "remixicon/fonts/remixicon.css";
 import "./page.css";
-import Input from "../../components/Input/Input";
 import { CodeBlock } from "../../components/ui/code-block";
 import Cookies from "js-cookie";
-import models from "./models";
 import { useParams, usePathname } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Toaster, toast } from "sonner";
+
+const SidebarSkeleton = () => (
+  <div className="animate-pulse flex flex-col h-full">
+    <div className="p-4 border-b border-white/[0.06]">
+      <div className="h-6 w-24 bg-white/[0.02] rounded mb-4"></div>
+      <div className="h-10 w-full bg-white/[0.02] rounded-xl"></div>
+    </div>
+    <div className="flex-1 p-3 space-y-6 overflow-hidden">
+      {[1, 2, 3].map((i) => (
+        <div key={i}>
+          <div className="h-3 w-16 bg-white/[0.02] rounded mb-3 mx-2"></div>
+          <div className="space-y-2">
+            <div className="h-9 w-full bg-white/[0.02] rounded-lg"></div>
+            <div className="h-9 w-full bg-white/[0.02] rounded-lg"></div>
+            <div className="h-9 w-full bg-white/[0.02] rounded-lg"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div className="p-3 border-t border-white/[0.06]">
+      <div className="flex items-center gap-3 p-2">
+        <div className="w-8 h-8 rounded-full bg-white/[0.02]"></div>
+        <div className="h-4 w-24 bg-white/[0.02] rounded"></div>
+      </div>
+    </div>
+  </div>
+);
+
+const MessagesSkeleton = () => (
+  <div className="max-w-3xl mx-auto px-4 py-8 space-y-8 animate-pulse">
+    {[1, 2].map((i) => (
+      <div key={i} className="space-y-6">
+        <div className="flex justify-end">
+          <div className="w-1/3 h-12 bg-white/[0.03] rounded-3xl rounded-tr-sm"></div>
+        </div>
+        <div className="flex justify-start w-full">
+          <div className="w-3/4 h-32 bg-white/[0.02] rounded-3xl rounded-tl-sm border border-white/[0.02]"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 const Page = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [isChatsLoading, setIsChatsLoading] = useState(true);
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false);
   const [generatingMessage, setGeneratingMessage] = useState({});
   const [isGenerating, setIsGenerating] = useState(false);
   const messagesRef = useRef();
   const [autoScroll, setAutoScroll] = useState(true);
   const messagesEndRef = useRef(null);
-  const [selectedModel, setSelectedModel] = useState(Object.keys(models)[0]);
-  const [selectedProvider, setSelectedProvider] = useState(
-    Object.keys(models[Object.keys(models)[0]].providers)[0]
-  );
+  const [availableModels, setAvailableModels] = useState({});
+  const [selectedModel, setSelectedModel] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState("OpenRouter");
   const startTimeRef = useRef(null);
   const [timeMetaData, setTimeMetaData] = useState({});
   const [messageMetadata, setMessageMetadata] = useState({});
@@ -40,6 +81,57 @@ const Page = () => {
   const params = useParams();
   const [isToggling, setIsToggling] = useState(false);
   const [isWebActive, setIsWebActive] = useState(false);
+  const abortControllerRef = useRef(null);
+  const titlePollingRef = useRef(null);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/fetchmodels`);
+        const data = await response.json();
+        
+        if (data.models) {
+          const formattedModels = {};
+          data.models.forEach(model => {
+            formattedModels[model.name] = {
+              display: model.name,
+              value: model.id,
+              providers: {
+                OpenRouter: { display: "OpenRouter", value: "OpenRouter" }
+              }
+            };
+          });
+          
+          setAvailableModels(formattedModels);
+          
+          // Always set model on fetch (don't check !selectedModel)
+          if (Object.keys(formattedModels).length > 0) {
+            // Check localStorage first
+            const savedModel = localStorage.getItem('selectedModel');
+            
+            if (savedModel && formattedModels[savedModel]) {
+              // Use saved model if it exists in the list
+              setSelectedModel(savedModel);
+            } else if (formattedModels['meta-llama/llama-3.3-70b-instruct:free']) {
+              // Try to use meta-llama as default
+              setSelectedModel('meta-llama/llama-3.3-70b-instruct:free');
+              localStorage.setItem('selectedModel', 'meta-llama/llama-3.3-70b-instruct:free');
+            } else {
+              // Fall back to first model
+              const firstModel = Object.keys(formattedModels)[0];
+              setSelectedModel(firstModel);
+              localStorage.setItem('selectedModel', firstModel);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching models:", error);
+        toast.error("Failed to fetch models");
+      }
+    };
+
+    fetchModels();
+  }, []);
 
   useEffect(() => {
     const chatIdFromUrl = params?.chatId || pathname.split("/").pop();
@@ -63,7 +155,7 @@ const Page = () => {
     return (timeDiff / 1000).toFixed(1);
   };
   const getModelDisplay = (modelValue) => {
-    for (const [key, model] of Object.entries(models)) {
+    for (const [key, model] of Object.entries(availableModels)) {
       if (model.value === modelValue) {
         return model.display;
       }
@@ -72,7 +164,7 @@ const Page = () => {
   };
 
   const getProviderKey = (providerDisplay) => {
-    for (const model of Object.values(models)) {
+    for (const model of Object.values(availableModels)) {
       for (const [key, provider] of Object.entries(model.providers)) {
         if (provider.display === providerDisplay) {
           return key;
@@ -82,7 +174,10 @@ const Page = () => {
     return providerDisplay; // fallback
   };
 
-  const fetchAndCategorizeChats = async (userId) => {
+  const fetchAndCategorizeChats = async (userId, showLoading = false) => {
+    if (showLoading) {
+      setIsChatsLoading(true);
+    }
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/fetchchats/${userId}`
@@ -121,10 +216,21 @@ const Page = () => {
     } catch (error) {
       console.error("Error fetching chats:", error);
       setChatData([]);
+    } finally {
+      if (showLoading) {
+        setIsChatsLoading(false);
+      }
     }
   };
 
   const newChat = async () => {
+    // Stop any ongoing generation and abort the request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsGenerating(false);
+    
     setChatId(null);
     setMessages([]);
     window.history.pushState({}, "", `/chat`);
@@ -161,11 +267,15 @@ const Page = () => {
     });
 
     if (isMobile) {
-      toggleSidebar();
+      setIsSidebarOpen(false);
     }
   };
 
   const handleStopGeneration = async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
     setIsGenerating(false);
   };
 
@@ -177,12 +287,20 @@ const Page = () => {
     if (chatId === "temp") {
       newChat();
       if (isMobile) {
-        toggleSidebar();
+        setIsSidebarOpen(false);
       }
       window.history.pushState({}, "", `/chat`);
       return;
     }
 
+    // Stop any ongoing generation and abort the request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsGenerating(false);
+    
+    setIsMessagesLoading(true);
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/fetchchat/${chatId}`
@@ -212,6 +330,8 @@ const Page = () => {
       }
     } catch (error) {
       console.error("Error fetching specific chat:", error);
+    } finally {
+      setIsMessagesLoading(false);
     }
   };
 
@@ -243,7 +363,7 @@ const Page = () => {
               username: data.username,
             });
 
-            await fetchAndCategorizeChats(data.userId);
+            await fetchAndCategorizeChats(data.userId, true);
           } else {
             Cookies.remove("token");
             window.location.href = "/login";
@@ -283,6 +403,46 @@ const Page = () => {
       };
     }
   }, [chatData]);
+
+  const pollForTitleUpdate = async (chatId) => {
+    let attempts = 0;
+    const maxAttempts = 20; // Poll for up to 20 seconds
+    
+    const poll = async () => {
+      if (attempts >= maxAttempts) {
+        clearInterval(titlePollingRef.current);
+        return;
+      }
+      
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/fetchchat/${chatId}`
+        );
+        const data = await response.json();
+        
+        if (data && data.title && data.title !== 'New Chat') {
+          // Update the chat data with animated title
+          setChatData((prevChatData) => {
+            const updatedChats = prevChatData.map((category) => ({
+              ...category,
+              chats: category.chats.map((chat) =>
+                chat.id === chatId ? { ...chat, title: data.title } : chat
+              ),
+            }));
+            return updatedChats;
+          });
+          
+          clearInterval(titlePollingRef.current);
+        }
+      } catch (error) {
+        console.error('Error polling for title:', error);
+      }
+      
+      attempts++;
+    };
+    
+    titlePollingRef.current = setInterval(poll, 1000);
+  };
 
   const startTimer = () => {
     startTimeRef.current = Date.now();
@@ -360,6 +520,9 @@ const Page = () => {
     setIsGenerating(true);
     startTimer();
 
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
+
     let currentChatId = latestChatIdRef.current;
 
     setMessages((prevMessages) => [
@@ -387,7 +550,10 @@ const Page = () => {
         setChatId(currentChatId);
         latestChatIdRef.current = currentChatId;
 
-        fetchAndCategorizeChats(userId);
+        fetchAndCategorizeChats(userId, false);
+        
+        // Start polling for title update
+        pollForTitleUpdate(currentChatId);
       } catch (error) {
         console.error("Error creating new chat:", error);
         setIsGenerating(false);
@@ -422,15 +588,16 @@ const Page = () => {
           },
           body: JSON.stringify({
             message,
-            model: models[selectedModel].value,
+            model: availableModels[selectedModel].value,
             provider: selectedProvider === "Auto" 
-              ? Object.entries(models[selectedModel].providers)
+              ? Object.entries(availableModels[selectedModel].providers)
                   .slice(1)
                   .map(([key, value]) => value.value)
-              : [models[selectedModel].providers[selectedProvider].value],
+              : [availableModels[selectedModel].providers[selectedProvider].value],
             chatId: currentChatId,
             username: userData.username,
           }),
+          signal: abortControllerRef.current?.signal,
         }
       );
 
@@ -496,7 +663,7 @@ const Page = () => {
         );
 
         // Refresh chat list
-        fetchAndCategorizeChats(userId);
+        fetchAndCategorizeChats(userId, false);
         return;
       }
 
@@ -550,7 +717,7 @@ const Page = () => {
         );
 
         // Refresh chat list to get updated title
-        fetchAndCategorizeChats(userId);
+        fetchAndCategorizeChats(userId, false);
       } else {
         throw new Error("Invalid response from server");
       }
@@ -558,24 +725,33 @@ const Page = () => {
     } catch (error) {
       console.error("Error sending message:", error);
       setIsGenerating(false);
-      toast.error(error.message || "Failed to send message. Please try again.", { 
-        position: "top-right" 
-      });
       
-      // Remove the user message that was optimistically added
-      setMessages((prevMessages) => prevMessages.slice(0, -1));
+      // Don't show error message if request was aborted (user stopped it)
+      if (error.name === 'AbortError') {
+        return;
+      }
+      
+      // Add error message to show failure state
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { role: "assistant", content: "", error: true, errorMessage: error.message || "Failed to generate response" }
+      ]);
+    } finally {
+      abortControllerRef.current = null;
     }
   };
 
   useLayoutEffect(() => {
-    const checkScreenSize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      setIsSidebarOpen(!mobile);
-    };
-
-    checkScreenSize();
+    const mobile = window.innerWidth < 768;
+    setIsMobile(mobile);
+    setIsSidebarOpen(!mobile);
     setMounted(true);
+    
+    return () => {
+      if (titlePollingRef.current) {
+        clearInterval(titlePollingRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -595,384 +771,487 @@ const Page = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  return (
-    <div className="flex w-full h-screen bg-[#121212] relative">
-      <div
-        className={`
-          h-full bg-gradient-to-b from-[#1a1a1a] to-[#212121] w-[17.5rem] flex-shrink-0 flex flex-col border-r border-[#333333]
-          ${isToggling ? "transition-all duration-300 ease-in-out" : ""}
-          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          ${isMobile ? "fixed left-0 top-0 z-40 shadow-2xl" : ""}
-        `}
-      >
-        <div className="px-3 py-4">
-          <div className="flex items-center justify-between sm:mb-6 mb-3">
-            <button
-              className="md:hidden text-white p-2 hover:bg-[#2a2a2a] rounded-lg transition-colors"
-              onClick={toggleSidebar}
-            >
-              <i
-                className={`ri-${
-                  isSidebarOpen ? "close" : "menu"
-                }-line text-2xl`}
-              ></i>
-            </button>
-            <h1
-              className={`font-bold hidden md:block text-transparent bg-gradient-to-r from-[#c69326] to-[#d4a843] bg-clip-text px-2.5 font-mono text-xl`}
-            >
-              UnchainedGPT
-            </h1>
-          </div>
-          <button
-            onClick={() => newChat()}
-            className="font-medium flex items-center space-x-3 w-full hover:bg-gradient-to-r hover:from-[#383838] hover:to-[#2a2a2a] px-3 py-2.5 rounded-xl transition-all duration-200 group"
-          >
-            <i className="ri-chat-new-line text-[#c69326] text-xl group-hover:scale-110 transition-transform"></i>
-            <span className="text-[#e2e2e2] font-medium">New Chat</span>
-          </button>
-        </div>
-        <div className="flex-1 overflow-hidden border-t border-[#333333]">
-          <div className="h-full overflow-y-auto px-3 py-4">
-            {chatData.map(({ category, chats }, categoryIndex) => (
-              <div key={category} className="mb-5">
-                <h6 className="text-[#8e8e8e] text-xs font-semibold mb-3 px-2.5 tracking-wider uppercase">
-                  {category}
-                </h6>
-                {chats.map((chat, chatIndex) => (
-                  <button
-                    key={chat.id}
-                    // href={`/chat/${chat.id}`}
-                    onClick={() => fetchSpecificChat(chat.id)}
-                    className="w-full mb-0.5 text-left px-3 py-2.5 rounded-xl 
-                         hover:bg-gradient-to-r hover:from-[#383838] hover:to-[#2a2a2a] 
-                         transition-all duration-200 ease-in 
-                         group relative overflow-hidden border border-transparent"
-                  >
-                    <span
-                      className="text-[#e6e6e6] group-hover:text-white text-[0.95rem] whitespace-nowrap overflow-hidden text-ellipsis block
-                           transition-colors duration-200"
+  // Model dropdown component
+  const ModelDropdown = ({ isOpen, onToggle }) => {
+    const dropdownRef = useRef(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isClosing, setIsClosing] = useState(false);
+
+    const filteredModels = Object.entries(availableModels).filter(([key]) =>
+      key.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const handleClose = () => {
+      setIsClosing(true);
+      setTimeout(() => {
+        onToggle(false);
+        setSearchQuery("");
+        setIsClosing(false);
+      }, 50);
+    };
+
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+          handleClose();
+        }
+      };
+      if (isOpen) document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isOpen]);
+
+    const handleModelSelect = (key) => {
+      setSelectedModel(key);
+      localStorage.setItem('selectedModel', key);
+      handleClose();
+    };
+
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); isOpen ? handleClose() : onToggle(!isOpen); }}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.06] hover:border-white/[0.1] transition-all text-xs group"
+        >
+          <i className="ri-cpu-line text-amber-400/50 group-hover:text-amber-400/60 transition-colors"></i>
+          <span className="text-white/60 group-hover:text-white/80 max-w-[150px] truncate transition-colors">{selectedModel || "Select Model"}</span>
+          <i className={`ri-arrow-down-s-line text-white/40 group-hover:text-white/60 transition-all ${isOpen ? "rotate-180" : "rotate-0"}`}></i>
+        </button>
+        {isOpen && (
+          <div className={`absolute left-0 bottom-full mb-2 w-80 bg-[#1a1a1a] rounded-xl border border-white/[0.1] shadow-2xl z-[100] overflow-hidden transition-all duration-200 ${
+            isClosing ? "animate-out fade-out slide-out-to-bottom-2" : "animate-in fade-in slide-in-from-bottom-2"
+          }`}>
+            <div className="p-3 border-b border-white/[0.06]">
+              <div className="relative">
+                <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm"></i>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search models..."
+                  className="w-full bg-white/[0.05] rounded-lg pl-9 pr-3 py-2.5 text-sm text-white/80 placeholder-white/30 focus:outline-none transition-all"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="max-h-[280px] overflow-y-auto scrollbar-thin">
+              {filteredModels.length > 0 ? (
+                <div className="p-2 space-y-[1px">
+                  {filteredModels.map(([key]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleModelSelect(key)}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-all ease-out truncate ${
+                        selectedModel === key 
+                          ? "text-amber-400/60 bg-amber-500/5 font-medium" 
+                          : "text-white/60 hover:text-white/90 hover:bg-white/[0.05]"
+                      }`}
                     >
-                      {categoryIndex === 0 && chatIndex === 0
-                        ? animatedTitle
-                        : chat.title}
-                    </span>
-                    {/* <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#212121] group-hover:from-[#2a2a2a] to-transparent"></div> */}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="h-[6rem] flex items-center justify-between px-2 py-1.5 border-t border-[#414141]">
-          <div className="flex-1 px-2 py-1.5 rounded-xl hover:bg-[#2c2c2c] transition-all cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden">
-                  <img
-                    src={userData.avatar}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
+                      {key}
+                    </button>
+                  ))}
                 </div>
-                <div>
-                  <h3 className="text-[#e2e2e2] font-semibold text-sm">
-                    {userData.username}
-                  </h3>
-                  <h5 className="text-[#8e8e8e] text-xs">{userData.email}</h5>
+              ) : (
+                <div className="py-8 text-center">
+                  <i className="ri-search-line text-white/20 text-2xl mb-2"></i>
+                  <p className="text-white/30 text-sm">No models found</p>
                 </div>
-              </div>
-              <button className="text-[#8e8e8e] hover:text-[#e2e2e2] transition-colors">
-                <i className="ri-settings-3-line text-xl"></i>
-              </button>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
+    );
+  };
 
-      {/* Main Content */}
-      <div className="flex-grow bg-[#121212] flex flex-col h-full">
-        {/* Mobile header */}
-        <div className="md:hidden fixed top-0 left-0 right-0 z-10 flex items-center justify-between bg-[#121212] h-16 px-4">
-          <button className="text-white p-2" onClick={toggleSidebar}>
-            <i className="ri-menu-line text-2xl"></i>
-          </button>
-          <h1 className="font-semibold text-[#c69326] font-mono text-xl">
-            UnchainedGPT
-          </h1>
-          <button className="text-white p-2">
-            <i className="ri-chat-new-line text-2xl"></i>
-          </button>
-        </div>
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef(null);
+  const [thinkingDots, setThinkingDots] = useState("");
 
-        <div className="flex flex-col flex-grow overflow-hidden">
-          {/* Messages or Welcome section */}
-          <div
-            ref={messagesRef}
-            onScroll={handleScroll}
-            className="flex-grow overflow-y-auto pb-20 md:pb-0 px-4 md:px-8"
-          >
-            <div className="flex flex-col h-max pt-20 w-full rounded-lg pb-20">
-              <section className="flex max-w-4xl mx-auto flex-col w-full gap-6">
-                {/* User message */}
-                <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[95%] md:max-w-[85%] rounded-lg transition-all mr-auto">
-                  <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] rounded-lg shadow-lg overflow-hidden border border-[#3a3a3a]">
-                    {/* Model information */}
-                    <div className="bg-gradient-to-r from-[#2a2a2a] to-[#252525] text-[#8e8e8e] text-xs font-medium py-2 px-4 flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <i className="ri-ai-generate text-[#c69326] text-lg"></i>
-                        <span className="text-[#a0a0a0] font-semibold">
-                          GPT-5.1
-                        </span>
-                        <span className="text-[#8e8e8e] text-xs">
-                          with Pollinations AI
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {/* <span className="text-[#8e8e8e] text-xs sm:block hidden">
-                          Tokens: 9
-                        </span> */}
-                        <span className="text-[#8e8e8e] text-xs">
-                          Time: 0.7s
-                        </span>
-                      </div>
-                    </div>
+  useEffect(() => {
+    if (isGenerating) {
+      const interval = setInterval(() => {
+        setThinkingDots((prev) => {
+          if (prev === "") return ".";
+          if (prev === ".") return "..";
+          if (prev === "..") return "...";
+          return "";
+        });
+      }, 280);
+      return () => clearInterval(interval);
+    } else {
+      setThinkingDots("");
+    }
+  }, [isGenerating]);
 
-                    {/* Response content */}
-                    <div className="p-4 bg-gradient-to-b from-[#212121] to-[#1a1a1a]">
-                      <div className="space-y-2 message-container">
-                        <div className="text-sm font-inter md:text-base text-[#e2e2e2] leading-relaxed">
-                          Hello{" "}
-                          {userData && userData.username
-                            ? userData.username
-                                .split(" ")[0]
-                                .charAt(0)
-                                .toUpperCase() +
-                              userData.username.split(" ")[0].slice(1)
-                            : "there"}
-                          ! How can I assist you today?
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+    
+    // Auto-resize textarea
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      const scrollHeight = inputRef.current.scrollHeight;
+      const lineHeight = 24; // approximate line height
+      const minHeight = lineHeight * 2; // 2 lines
+      const maxHeight = lineHeight * 4; // 4 lines
+      
+      if (scrollHeight <= maxHeight) {
+        inputRef.current.style.height = Math.max(scrollHeight, minHeight) + 'px';
+      } else {
+        inputRef.current.style.height = maxHeight + 'px';
+      }
+    }
+  };
+
+  const handleInputSubmit = (e) => {
+    e.preventDefault();
+    if (inputValue.trim() && !isGenerating) {
+      handleSendMessage(inputValue, selectedModel, selectedProvider);
+      setInputValue("");
+      // Reset textarea height
+      if (inputRef.current) {
+        inputRef.current.style.height = '48px'; // 2 lines default
+      }
+    }
+  };
+
+  return (
+    <div className="flex w-full h-screen bg-[#0f0f0f] relative overflow-hidden">
+      {/* Desktop Sidebar - Static, takes up space */}
+      <aside className="hidden md:flex h-full w-[280px] flex-shrink-0 flex-col bg-[#171717] border-r border-white/[0.06]">
+        {isChatsLoading ? (
+          <SidebarSkeleton />
+        ) : (
+          <>
+            {/* Sidebar Header */}
+            <div className="p-4 border-b border-white/[0.06]">
+              <h1 className="text-yellow-500/60 text-lg font-bold tracking-tight mb-4 font-mono">UnchainedGPT</h1>
+              <button
+                onClick={newChat}
+                className="w-full flex items-center gap-2.5 opacity-75 px-0 py-2 rounded-lg text-white/60 hover:text-white/90 hover:opacity-90 transition-all text-sm"
+              >
+                <i className="ri-quill-pen-ai-line text-lg"></i>
+                <span>New Chat</span>
+              </button>
+            </div>
+
+            {/* Chat History */}
+            <div className="flex-1 overflow-y-auto py-3 px-3 scrollbar-thin">
+              {chatData.map(({ category, chats }, categoryIndex) => (
+                <div key={category} className="mb-4">
+                  <p className="text-white/30 text-[11px] uppercase tracking-widest px-2 mb-2 font-medium">{category}</p>
+                  {chats.map((chat, chatIndex) => (
+                    <button
+                      key={chat.id}
+                      onClick={() => fetchSpecificChat(chat.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-all
+                        ${chatId === chat.id ? "bg-white/[0.08] text-white/90" : "text-white/50 hover:text-white/70 hover:bg-white/[0.04]"}
+                      `}
+                    >
+                      {categoryIndex === 0 && chatIndex === 0 ? animatedTitle : chat.title}
+                    </button>
+                  ))}
                 </div>
+              ))}
+            </div>
 
-                {messages.map((message, index) => (
-                  <React.Fragment key={index}>
-                    {message.role === "user" ? (
-                      <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[95%] md:max-w-[85%] border border-[#414141] rounded-lg p-4 transition-all ml-auto bg-[#1e1e1e] shadow-lg">
-                        <div className="space-y-2">
-                          <p className="text-sm font-inter md:text-base text-[#e6e6e6]">
-                            {message.content}
-                          </p>
-                        </div>
+            {/* User Profile */}
+            <div className="p-3 border-t border-white/[0.06]">
+              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
+                  <p className="text-white/40 text-xs truncate">{userData.email}</p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </aside>
+
+      {/* Mobile Sidebar - Floating overlay */}
+      <aside className={`
+        md:hidden fixed left-0 top-0 h-full w-[280px] flex-shrink-0 flex flex-col
+        bg-[#171717] border-r border-white/[0.06] z-50
+        transition-transform duration-300 ease-out
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+      `}>
+        {isChatsLoading ? (
+          <SidebarSkeleton />
+        ) : (
+          <>
+            {/* Sidebar Header */}
+            <div className="p-4 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-yellow-500/60 text-lg font-bold tracking-tight font-mono">UnchainedGPT</h1>
+                <button onClick={toggleSidebar} className="text-white/40 hover:text-white/70 transition-colors">
+                  <i className="ri-close-line text-lg"></i>
+                </button>
+              </div>
+              <button
+                onClick={newChat}
+                className="w-full flex items-center gap-2.5 opacity-75 px-0 py-2 rounded-lg text-white/60 hover:text-white/90 hover:opacity-90 transition-all text-sm"
+              >
+                <i className="ri-quill-pen-ai-line text-lg"></i>
+                <span>New Chat</span>
+              </button>
+            </div>
+
+            {/* Chat History */}
+            <div className="flex-1 overflow-y-auto py-3 px-3 scrollbar-thin">
+              {chatData.map(({ category, chats }, categoryIndex) => (
+                <div key={category} className="mb-4">
+                  <p className="text-white/30 text-[11px] uppercase tracking-widest px-2 mb-2 font-medium">{category}</p>
+                  {chats.map((chat, chatIndex) => (
+                    <button
+                      key={chat.id}
+                      onClick={() => { fetchSpecificChat(chat.id); toggleSidebar(); }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-all
+                        ${chatId === chat.id ? "bg-white/[0.08] text-white/90" : "text-white/50 hover:text-white/70 hover:bg-white/[0.04]"}
+                      `}
+                    >
+                      {categoryIndex === 0 && chatIndex === 0 ? animatedTitle : chat.title}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* User Profile */}
+            <div className="p-3 border-t border-white/[0.06]">
+              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
+                  <p className="text-white/40 text-xs truncate">{userData.email}</p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </aside>
+
+      <main className="flex-1 flex flex-col h-full relative">
+        <header className="md:hidden flex items-center justify-between px-4 h-14 border-b border-white/[0.06] bg-[#171717]">
+          <button onClick={toggleSidebar} className="text-white/60 hover:text-white/80">
+            <i className="ri-menu-line text-xl"></i>
+          </button>
+          <span className="text-yellow-500/60 text-lg font-bold tracking-tight font-mono">UnchainedGPT</span>
+          <button onClick={newChat} className="text-white/60 hover:text-white/80">
+            <i className="ri-quill-pen-ai-line opacity-80 text-xl"></i>
+          </button>
+        </header>
+
+        <div
+          ref={messagesRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto scroll-smooth"
+        >
+          {isMessagesLoading ? (
+            <MessagesSkeleton />
+          ) : (
+            <div className="max-w-3xl mx-auto px-4 py-8 md:py-12">
+              {/* Welcome Message */}
+              {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+                <h2 className="text-[1.7rem] font-medium text-white/90 mb-8">
+                  Hey, How can I help?
+                </h2>
+                {/* <p className="text-white/40 mb-10">How can I help you today?</p> */}
+                
+                {/* Suggestion Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl px-4">
+                  <button className="group px-5 cursor-default select-text py-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-left">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      {/* <span className="text-xl">💡</span> */}
+                      <span className="text-blue-400/70 text-xs font-semibold font-inter tracking-wider">Creative</span>
+                    </div>
+                    <div className="text-white/60 text-sm leading-relaxed">
+                      Generate creative content, stories, and ideas
+                    </div>
+                  </button>
+                  
+                  <button className="group px-5 cursor-default select-text py-4 rounded-2xl bg-purple-500/5 border border-purple-500/10 text-left">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      {/* <span className="text-xl">🧠</span> */}
+                      <span className="text-purple-400/70 text-xs font-semibold font-inter tracking-wider">Learn</span>
+                    </div>
+                    <div className="text-white/60 text-sm leading-relaxed">
+                      Explain concepts, answer questions, and teach
+                    </div>
+                  </button>
+                  
+                  <button className="group px-5 cursor-default select-text py-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-left">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      {/* <span className="text-xl">⚡</span> */}
+                      <span className="text-emerald-400/70 text-xs font-semibold font-inter tracking-wider">Code</span>
+                    </div>
+                    <div className="text-white/60 text-sm leading-relaxed">
+                      Write, debug, and explain code efficiently
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Messages */}
+            <div className="space-y-6">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {message.role === "user" ? (
+                    <div className="max-w-[85%]">
+                      <div className="px-5 py-3 rounded-3xl bg-white/[0.08]">
+                        <p className="text-white/90 leading-relaxed">{message.content}</p>
                       </div>
-                    ) : (
-                      <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[92vw] md:max-w-[85%] rounded-lg transition-all mr-auto sm:min-w-[350px]">
-                        <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] rounded-lg shadow-lg overflow-hidden border border-[#3a3a3a]">
-                          {/* Model information */}
-                          <div className="bg-gradient-to-r from-[#2a2a2a] to-[#252525] text-[#8e8e8e] text-xs font-medium py-2 px-4 flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              {messageMetadata[index] ? (
-                                <>
-                                  <i className="ri-ai-generate text-[#c69326] text-lg"></i>
-                                  {messageMetadata[index] &&
-                                    (messageMetadata[index].model ||
-                                      messageMetadata[index].provider) && (
-                                      <div className="metadata space-x-2">
-                                        {messageMetadata[index].model && (
-                                          <span className="text-[#a0a0a0] font-semibold">
-                                            {getModelDisplay(messageMetadata[index].model)}
-                                          </span>
-                                        )}
-                                        {messageMetadata[index].provider && (
-                                          <span className="text-[#8e8e8e] text-xs">
-                                            with{" "}
-                                            {getProviderKey(messageMetadata[index].provider)}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                </>
-                              ) : (
-                                <>
-                                  <i className="ri-error-warning-line text-yellow-500 text-lg"></i>
-                                  <span className="text-[#a0a0a0]  font-semibold">
-                                    Error
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {/* <span className="text-[#8e8e8e] text-xs sm:block hidden">
-                                Tokens: 150
-                              </span> */}
-                              <span className="text-[#8e8e8e] text-xs">
-                                Time: {timeMetaData[index]}s
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Response content */}
-                          <div className="p-4 bg-gradient-to-b from-[#212121] to-[#1a1a1a]">
-                            <div className="space-y-2 message-container">
-                              <div className="text-sm font-inter md:text-base text-[#e2e2e2] leading-relaxed">
-                                {message.content.trim().length === 0 ||
-                                message.content == undefined ? (
-                                  <span className="text-[#ef4444]">
-                                    Error: No response received. Please try with
-                                    a different model.
-                                  </span>
-                                ) : isValidImageUrl(message.content) ? (
-                                  <img
-                                    src={message.content}
-                                    alt="Generated Image"
-                                    className="w-full md:max-w-[24rem] rounded-lg"
-                                    onError={(e) => {
-                                      e.target.onerror = null;
-                                      e.target.src = "/placeholder-image.png";
-                                    }}
-                                  />
-                                ) : (
-                                  <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    components={{
-                                      code({
-                                        node,
-                                        inline,
-                                        className,
-                                        children,
-                                        ...props
-                                      }) {
-                                        const match = /language-(\w+)/.exec(
-                                          className || ""
-                                        );
-                                        return !inline && match ? (
-                                          <CodeBlock
-                                            language={match[1]}
-                                            filename={`${match[1].charAt(0).toUpperCase() + match[1].slice(1)} Code`}
-                                            code={String(children).replace(/\n$/, "")}
-                                          />
-                                        ) : (
-                                          <code
-                                            className={className}
-                                            {...props}
-                                          >
-                                            {children}
-                                          </code>
-                                        );
-                                      },
-                                    }}
-                                    className="zenos-markdown-content"
-                                  >
-                                    {message.content}
-                                  </ReactMarkdown>
-                                )}
-                              </div>
-                            </div>
+                    </div>
+                  ) : (
+                    <div className={message.error ? "" : "max-w-full w-full"}>
+                      {message.error ? (
+                        <div className="px-5 py-3 rounded-3xl bg-[#1a1a1a]">
+                          <div className="flex items-center gap-2">
+                            <i className="ri-error-warning-line text-red-400/60 text-sm"></i>
+                            <span className="text-white/40 text-sm">Failed to generate</span>
                           </div>
                         </div>
-                      </div>
-                    )}
-                    {/* Copy button */}
-                    {message.role === "assistant" && (
-                      <button
-                        onClick={() => handleCopy(index)}
-                        className="animate-in group cursor-pointer p-1.5 flex items-center w-fit -mt-4"
-                      >
-                        <i
-                          className={`${
-                            index == copyIndex
-                              ? "ri-check-fill"
-                              : "ri-file-copy-line"
-                          } text-[#8e8e8e] group-hover:text-[#c1c1c1] transition-all`}
-                        ></i>
-                        <span className="text-xs md:text-sm ml-1.5 text-[#8e8e8e] group-hover:text-[#c1c1c1] transition-all">
-                          Copy
-                        </span>
-                      </button>
-                    )}
-                  </React.Fragment>
-                ))}
-
-                {isGenerating && (
-                  <div className="animate-in slide-in-from-bottom-5 duration-300 ease-out relative max-w-[95%] md:max-w-[85%] rounded-lg transition-all mr-auto">
-                    <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] rounded-lg shadow-lg overflow-hidden border border-[#3a3a3a]">
-                      {/* Model information */}
-                      <div className="bg-gradient-to-r from-[#2a2a2a] to-[#252525] text-[#8e8e8e] text-xs font-medium py-2 px-4 flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <i className="ri-ai-generate text-[#c69326] text-lg"></i>
-                          {messageMetadata[messages.length] &&
-                          (messageMetadata[messages.length].model ||
-                            messageMetadata[messages.length].provider) ? (
-                            <div className="metadata space-x-2">
-                              {messageMetadata[messages.length].model && (
-                                <span className="text-[#a0a0a0] font-semibold">
-                                  {getModelDisplay(messageMetadata[messages.length].model)}
-                                </span>
-                              )}
-                              {messageMetadata[messages.length].provider && (
-                                <span className="text-[#8e8e8e] text-xs">
-                                  with{" "}
-                                  {getProviderKey(messageMetadata[messages.length].provider)}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-[#8e8e8e] font-semibold">
-                              Generating...
+                      ) : (
+                      <div className="px-5 pt-2.5 pb-4 rounded-3xl bg-[#1a1a1a]">
+                        {/* Message Header */}
+                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/[0.04]">
+                          <div className="flex items-center gap-2">
+                            <i className="ri-cpu-line text-amber-400/50 text-sm"></i>
+                            <span className="text-white/35 text-xs">
+                              {messageMetadata[index]?.model ? getModelDisplay(messageMetadata[index].model) : "AI"}
                             </span>
+                          </div>
+                          {timeMetaData[index] && (
+                            <span className="text-white/30 text-xs">{timeMetaData[index]}s</span>
+                          )}
+                        </div>
+                        {/* Message Content */}
+                        <div className="text-white/55 opacity-90 leading-relaxed">
+                          {message.content?.trim().length === 0 ? (
+                            <span className="text-red-400/80 text-sm">Error: No response received.</span>
+                          ) : isValidImageUrl(message.content) ? (
+                            <img src={message.content} alt="" className="max-w-md rounded-xl" />
+                          ) : (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                code({ node, inline, className, children, ...props }) {
+                                  const match = /language-(\w+)/.exec(className || "");
+                                  return !inline && match ? (
+                                    <CodeBlock
+                                      language={match[1]}
+                                      filename={`${match[1].charAt(0).toUpperCase() + match[1].slice(1)}`}
+                                      code={String(children).replace(/\n$/, "")}
+                                    />
+                                  ) : (
+                                    <code className="px-1.5 py-0.5 rounded-md bg-white/[0.06] text-white/70 text-sm" {...props}>
+                                      {children}
+                                    </code>
+                                  );
+                                },
+                              }}
+                              className="prose-modern text-white/40"
+                            >
+                              {message.content}
+                            </ReactMarkdown>
                           )}
                         </div>
                       </div>
-
-                      {/* Response content */}
-                      <div className="p-4 bg-gradient-to-b from-[#212121] to-[#1a1a1a]">
-                        <div className="space-y-2 message-container">
-                          <div className="text-sm font-inter md:text-base text-[#e2e2e2] leading-relaxed">
-                            {Object.keys(generatingMessage).length === 0 ||
-                            generatingMessage.content === "" ? (
-                              <div className="blinking-cursor">|</div>
-                            ) : (
-                              generatingMessage.content
-                            )}
-                          </div>
-                        </div>
+                      )}
+                      {/* Message Actions - Outside card */}
+                      {!message.error && (
+                      <div className="flex items-center gap-3 mt-2 px-2">
+                        <button
+                          onClick={() => handleCopy(index)}
+                          className="flex items-center gap-1.5 text-white/20 opacity-80 hover:text-white/40 transition-colors text-xs"
+                        >
+                          <i className={`${copyIndex === index ? "ri-check-line text-emerald-400" : "ri-file-copy-line"}`}></i>
+                          <span>{copyIndex === index ? "Copied" : "Copy"}</span>
+                        </button>
                       </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Generating State */}
+              {isGenerating && (
+                <div className="flex justify-start">
+                  <div className="px-5 py-3 rounded-3xl bg-[#1a1a1a]">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/20 border-t-amber-400/60 rounded-full animate-spin"></div>
+                      <span className="text-white/50 text-sm">Thinking{thinkingDots}</span>
                     </div>
                   </div>
-                )}
-
-                <div ref={messagesEndRef} />
-              </section>
+                </div>
+              )}
             </div>
+            <div ref={messagesEndRef} />
           </div>
+          )}
+        </div>
 
-          {/* Input Section */}
-          <div className="flex-shrink-0 fixed bottom-0 left-0 right-0 md:relative bg-[#121212]">
-            <Input
-              handleSendMessage={handleSendMessage}
-              models={models}
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
-              selectedProvider={selectedProvider}
-              setSelectedProvider={setSelectedProvider}
-              isGenerating={isGenerating}
-              handleStopGeneration={handleStopGeneration}
-              isWebActive={isWebActive}
-              handleSetWebActive={handleSetWebActive}
-            />
+        {/* Input Area */}
+        <div className=" bg-[#0f0f0f00]">
+          <div className="max-w-3xl mx-auto px-4 pb-4">
+            <form onSubmit={handleInputSubmit}>
+              <div className="bg-[#1a1a1a] rounded-2xl border border-white/[0.08]">
+                <div className="flex items-end gap-2 px-5 py-4">
+                  <textarea
+                    ref={inputRef}
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleInputSubmit(e); } }}
+                    placeholder="Message UnchainedGPT..."
+                    className="flex-1 bg-transparent text-white/90 placeholder-white/30 resize-none focus:outline-none overflow-y-auto scrollbar-thin"
+                    style={{ height: '48px', lineHeight: '24px' }}
+                  />
+                  {isGenerating ? (
+                    <button
+                      type="button"
+                      onClick={handleStopGeneration}
+                      className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-all flex-shrink-0"
+                    >
+                      <i className="ri-stop-fill text-white/70 text-base"></i>
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!inputValue.trim()}
+                      className="h-9 w-9 rounded-full bg-gradient-to-br from-amber-500/80 to-amber-600/80 hover:from-amber-400/80 hover:to-amber-500/80 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                    >
+                      <i className="ri-arrow-up-line text-black text-lg font-bold"></i>
+                    </button>
+                  )}
+                </div>
+                <div className="px-4 pb-3 border-t border-white/[0.04] pt-3">
+                  <ModelDropdown isOpen={modelDropdownOpen} onToggle={setModelDropdownOpen} />
+                </div>
+              </div>
+            </form>
           </div>
         </div>
-      </div>
+      </main>
 
-      {/* Overlay for mobile */}
-      {isMobile && isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={toggleSidebar}
-        ></div>
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div className="md:hidden fixed inset-0 bg-black/60 z-40" onClick={toggleSidebar} />
       )}
-      <Toaster richColors theme="dark" />
+
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: { background: "#171717", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: "14px" },
+        }}
+      />
     </div>
   );
 };

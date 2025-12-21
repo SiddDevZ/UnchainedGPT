@@ -33,15 +33,18 @@ router.post('/', async (c) => {
 })
 
 async function generateAndUpdateTitle(chatId, prompt) {
-  const defaultModel = 'gpt-5-nano'
-  const providers = ['PollinationsAI']
+  const models = [
+    'openai/gpt-oss-20b:free',
+    'google/gemma-3-27b-it:free',
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'mistralai/mistral-7b-instruct:free'
+  ]
   let generatedTitle = 'New Chat'
 
-  const providerPromises = providers.map(async (provider) => {
+  for (const model of models) {
     try {
-      // base payload
       const payload = {
-        model: defaultModel,
+        model: model,
         messages: [
           {
             role: 'system',
@@ -49,39 +52,36 @@ async function generateAndUpdateTitle(chatId, prompt) {
               "Generate a short, concise title for a chat based on the following prompt. The title should be no more than 30 characters, also don't include any quotes."
           },
           { role: 'user', content: prompt }
-        ],
-        provider: provider,
-        stream: false
+        ]
       }
 
-      if (provider == 'PollinationsAI') {
-        payload.api_key = "q05DlCSgPBK2uvJZ"
-      }
-
-      const response = await fetch('https://api.siddz.com/chatapi/v1/chat/completions', {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Accept: 'application/json'
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://zenosai.com',
+          'X-Title': 'Zenos AI'
         },
         body: JSON.stringify(payload)
       })
 
-      if (!response.ok) return null
+      if (!response.ok) {
+        console.error(`Model ${model} failed with status ${response.status}`)
+        continue
+      }
 
       const data = await response.json()
-      return data.choices[0]?.message?.content?.trim() || null
+      const title = data.choices[0]?.message?.content?.trim()
+      
+      if (title && title.length > 0) {
+        generatedTitle = title.substring(0, 50) // Limit to 50 chars
+        break // Success, exit loop
+      }
     } catch (error) {
-      console.error(`Error with ${provider}:`, error)
-      return null
+      console.error(`Error with model ${model}:`, error)
+      continue // Try next model
     }
-  })
-
-  const results = await Promise.all(providerPromises)
-  const validTitle = results.find((title) => title !== null)
-
-  if (validTitle) {
-    generatedTitle = validTitle
   }
 
   try {

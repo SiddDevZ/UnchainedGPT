@@ -15,6 +15,7 @@ import chatRoute from "./routes/chat.js";
 import messageRoute from "./routes/message.js";
 import fetchChatsRoute from "./routes/fetchChats.js";
 import fetchChatRoute from "./routes/fetchChat.js";
+import fetchModelsRoute from "./routes/fetchModels.js";
 import v1Route from "./routes/v1.js";
 import streamMessageRoute from "./routes/streamMessage.js";
 
@@ -47,6 +48,7 @@ app.route("/api/message", messageRoute);
 app.route("/api/streammessage", streamMessageRoute);
 app.route("/api/fetchchats", fetchChatsRoute);
 app.route("/api/fetchchat", fetchChatRoute);
+app.route("/api/fetchmodels", fetchModelsRoute);
 app.route("/v1", v1Route); // OpenAI-compatible API endpoint
 
 const server = serve({
