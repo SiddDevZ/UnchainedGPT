@@ -110,13 +110,17 @@ const Page = () => {
             const savedModel = localStorage.getItem('selectedModel');
             
             if (savedModel && formattedModels[savedModel]) {
-              // Use saved model if it exists in the list - don't save again
+              // Use saved model if it exists in the list
               setSelectedModel(savedModel);
             } else {
-              // No saved model, try to use meta-llama as default
-              if (formattedModels['meta-llama/llama-3.3-70b-instruct:free']) {
-                setSelectedModel('meta-llama/llama-3.3-70b-instruct:free');
-                localStorage.setItem('selectedModel', 'meta-llama/llama-3.3-70b-instruct:free');
+              // No saved model, find first model that starts with "Meta"
+              const metaModel = Object.keys(formattedModels).find(key => 
+                key.toLowerCase().startsWith('meta')
+              );
+              
+              if (metaModel) {
+                setSelectedModel(metaModel);
+                localStorage.setItem('selectedModel', metaModel);
               } else {
                 // Fall back to first model
                 const firstModel = Object.keys(formattedModels)[0];
