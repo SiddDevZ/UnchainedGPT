@@ -104,23 +104,25 @@ const Page = () => {
           
           setAvailableModels(formattedModels);
           
-          // Always set model on fetch (don't check !selectedModel)
+          // Set model after fetching from API
           if (Object.keys(formattedModels).length > 0) {
             // Check localStorage first
             const savedModel = localStorage.getItem('selectedModel');
             
             if (savedModel && formattedModels[savedModel]) {
-              // Use saved model if it exists in the list
+              // Use saved model if it exists in the list - don't save again
               setSelectedModel(savedModel);
-            } else if (formattedModels['meta-llama/llama-3.3-70b-instruct:free']) {
-              // Try to use meta-llama as default
-              setSelectedModel('meta-llama/llama-3.3-70b-instruct:free');
-              localStorage.setItem('selectedModel', 'meta-llama/llama-3.3-70b-instruct:free');
             } else {
-              // Fall back to first model
-              const firstModel = Object.keys(formattedModels)[0];
-              setSelectedModel(firstModel);
-              localStorage.setItem('selectedModel', firstModel);
+              // No saved model, try to use meta-llama as default
+              if (formattedModels['meta-llama/llama-3.3-70b-instruct:free']) {
+                setSelectedModel('meta-llama/llama-3.3-70b-instruct:free');
+                localStorage.setItem('selectedModel', 'meta-llama/llama-3.3-70b-instruct:free');
+              } else {
+                // Fall back to first model
+                const firstModel = Object.keys(formattedModels)[0];
+                setSelectedModel(firstModel);
+                localStorage.setItem('selectedModel', firstModel);
+              }
             }
           }
         }
