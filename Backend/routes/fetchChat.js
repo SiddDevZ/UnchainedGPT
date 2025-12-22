@@ -17,8 +17,8 @@ router.get('/:chatId', async (c) => {
     const messages = chat.messages
 
     const formattedMessages = []
-    const metaData = []
-    const timeData = []
+    const metaData = {}
+    const timeData = {}
 
     messages.forEach((message, index) => {
       formattedMessages.push({
@@ -27,15 +27,16 @@ router.get('/:chatId', async (c) => {
         content: message.content
       })
 
-      metaData.push({
+      metaData[index] = {
         model: message.model,
         provider: message.provider
-      })
+      }
 
-      timeData.push(message.timeItTook || null)
+      timeData[index] = message.timeItTook || null
     })
 
     return c.json({
+      title: chat.title,
       messages: formattedMessages,
       metaData: metaData,
       timeData: timeData,

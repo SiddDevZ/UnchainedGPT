@@ -62,8 +62,7 @@ router.post('/', async (c) => {
     history.push({ role: 'assistant', content: fullResponse });
     conversationHistories.set(chatId, history);
     
-    // Save to database
-    await saveMessagesToChat(chatId, history, selectedModel, 'OpenRouter');
+    // Note: Messages are saved via /message endpoint from frontend with proper metadata
     
     console.log('Returning successful response');
     return c.json({ 
@@ -88,56 +87,56 @@ async function generateTextResponse(history, model) {
       messages: history,
     };
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
+    const apiKeys = (process.env.OPENROUTER_API_KEY || '').split(',').map(k => k.trim()).filter(k => k);
+    
+    if (apiKeys.length === 0) {
         console.error("OPENROUTER_API_KEY is not set");
         return null;
     }
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://zenos-ai.com', // Replace with your site URL
-        'X-Title': 'Zenos AI', // Replace with your site name
-      },
-      body: JSON.stringify(payload),
-      timeout: 120000 // 2 minute timeout
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API response not OK:', response.status, response.statusText, errorText);
-      return null;
+    // Shuffle keys
+    for (let i = apiKeys.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [apiKeys[i], apiKeys[j]] = [apiKeys[j], apiKeys[i]];
     }
 
-    const data = await response.json();
-    return data.choices[0].message.content;
+    for (const apiKey of apiKeys) {
+        try {
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'https://zenos-ai.com', // Replace with your site URL
+                    'X-Title': 'Zenos AI', // Replace with your site name
+                },
+                body: JSON.stringify(payload),
+                timeout: 120000 // 2 minute timeout
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                if (response.status === 429 && errorText.includes("Rate limit exceeded: free-models-per-day")) {
+                    console.warn(`Key rate limited, trying next key...`);
+                    continue;
+                }
+                console.error('API response not OK:', response.status, response.statusText, errorText);
+                return null;
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content;
+        } catch (error) {
+            console.error('Error generating text response:', error);
+            return null;
+        }
+    }
+    
+    return null;
 
   } catch (error) {
     console.error('Error generating text response:', error);
     return null;
-  }
-}
-
-async function saveMessagesToChat(chatId, history, model, provider) {
-  try {
-    const messageObjects = history.map((msg, index) => ({
-      message_id: `${chatId}_${index}`,
-      role: msg.role,
-      model: model,
-      provider: provider,
-      content: msg.content,
-      timestamp: new Date()
-    }));
-
-    await chatModel.findByIdAndUpdate(chatId, {
-      messages: messageObjects,
-      updatedAt: new Date()
-    });
-  } catch (error) {
-    console.error('Error saving messages to chat:', error);
   }
 }
 

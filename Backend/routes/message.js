@@ -26,6 +26,25 @@ router.post('/:chatId', async (c) => {
       return c.json({ error: 'Chat not found' }, 404)
     }
 
+    // Check if message with this index already exists to prevent duplicates
+    const existingMessageIndex = chat.messages.findIndex(
+      (msg) => msg.message_id === message.index || msg.message_id === `${chatId}_${message.index - 1}`
+    )
+    
+    if (existingMessageIndex !== -1) {
+      // Update existing message instead of adding duplicate
+      chat.messages[existingMessageIndex] = {
+        ...chat.messages[existingMessageIndex],
+        content: message.content?.trimEnd() || chat.messages[existingMessageIndex].content,
+        model: message.model || chat.messages[existingMessageIndex].model,
+        provider: message.provider || chat.messages[existingMessageIndex].provider,
+        timeItTook: message.timeItTook || chat.messages[existingMessageIndex].timeItTook,
+      }
+      chat.updatedAt = new Date()
+      await chat.save()
+      return c.json({ message: 'Message updated successfully', newMessage: chat.messages[existingMessageIndex] }, 200)
+    }
+
     let conentMessage = message.content;
     if (conentMessage == undefined){
         conentMessage = "error: No content provided in the message"

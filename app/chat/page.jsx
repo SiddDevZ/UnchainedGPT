@@ -51,6 +51,86 @@ const MessagesSkeleton = () => (
   </div>
 );
 
+const TypewriterMessage = ({ content, onComplete, onUpdate }) => {
+  const [displayedContent, setDisplayedContent] = useState("");
+  const [isTyping, setIsTyping] = useState(true);
+
+  useEffect(() => {
+    if (!content) {
+      setIsTyping(false);
+      if (onComplete) onComplete();
+      return;
+    }
+
+    const minDuration = 250;
+    const baseSpeed = 12; // ms per char - slightly faster for smoother feel
+    // Allow slightly longer duration for very long texts to maintain smoothness
+    const calculatedDuration = Math.min(Math.max(content.length * baseSpeed, minDuration), 4000);
+    
+    let startTime;
+    let animationFrame;
+
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = timestamp - startTime;
+      
+      if (progress >= calculatedDuration) {
+        setDisplayedContent(content);
+        setIsTyping(false);
+        if (onComplete) onComplete();
+        return;
+      }
+
+      const ratio = progress / calculatedDuration;
+      const charCount = Math.floor(ratio * content.length);
+      
+      setDisplayedContent((prev) => {
+        if (prev.length !== charCount) {
+            return content.slice(0, charCount);
+        }
+        return prev;
+      });
+      
+      if (onUpdate) onUpdate();
+      
+      animationFrame = requestAnimationFrame(animate);
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, []);
+
+  const components = useMemo(() => ({
+    code({ node, inline, className, children, ...props }) {
+      const match = /language-(\w+)/.exec(className || "");
+      return !inline && match ? (
+        <CodeBlock
+          language={match[1]}
+          filename={`${match[1].charAt(0).toUpperCase() + match[1].slice(1)}`}
+          code={String(children).replace(/\n$/, "")}
+        />
+      ) : (
+        <code className="px-1.5 py-0.5 rounded-md bg-white/[0.06] text-white/70 text-sm" {...props}>
+          {children}
+        </code>
+      );
+    },
+  }), []);
+
+  const plugins = useMemo(() => [remarkGfm], []);
+
+  return (
+    <ReactMarkdown
+      remarkPlugins={plugins}
+      components={components}
+      className="prose-modern text-white/40"
+    >
+      {displayedContent + (isTyping ? "" : "")}
+    </ReactMarkdown>
+  );
+};
+
 const Page = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -62,6 +142,7 @@ const Page = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const messagesRef = useRef();
   const [autoScroll, setAutoScroll] = useState(true);
+  const autoScrollRef = useRef(true);
   const messagesEndRef = useRef(null);
   const [availableModels, setAvailableModels] = useState({});
   const [selectedModel, setSelectedModel] = useState("");
@@ -483,21 +564,54 @@ const Page = () => {
     return null;
   };
 
-  const scrollToBottom = () => {
-    if (autoScroll && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (behavior = "smooth") => {
+    if (autoScrollRef.current && messagesRef.current) {
+      if (behavior === "auto") {
+        messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+      } else if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior });
+      }
     }
   };
 
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
-    const isAtBottom = scrollHeight - scrollTop === clientHeight;
-    setAutoScroll(isAtBottom);
+    const bottomTolerance = 50; // Tolerance in pixels
+    const isAtBottom = scrollHeight - scrollTop - clientHeight <= bottomTolerance;
+    
+    if (autoScrollRef.current !== isAtBottom) {
+      setAutoScroll(isAtBottom);
+      autoScrollRef.current = isAtBottom;
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages, generatingMessage]);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      // Ignore if modifier keys are pressed (Ctrl, Alt, Meta)
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      
+      // Ignore if focus is already on an input or textarea
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
+      // Check if it's a printable character (length 1)
+      if (e.key.length === 1) {
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [chatId, isMobile]);
 
   const handleCopy = async (messageId) => {
     const messageToCopy = messages[messageId];
@@ -550,10 +664,14 @@ const Page = () => {
 
     let currentChatId = latestChatIdRef.current;
 
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { role: "user", content: message },
-    ]);
+    let userMessageIndex = null; // zero-based index for the new user message
+    setMessages((prevMessages) => {
+      userMessageIndex = prevMessages.length;
+      return [
+        ...prevMessages,
+        { role: "user", content: message },
+      ];
+    });
 
     if (!currentChatId) {
       try {
@@ -596,7 +714,7 @@ const Page = () => {
         },
         body: JSON.stringify({
           message: {
-            index: messages.length + 1,
+            index: (userMessageIndex !== null ? userMessageIndex + 1 : messages.length + 1),
             role: "user",
             content: message,
           },
@@ -641,30 +759,34 @@ const Page = () => {
 
       // Handle image response
       if (data.type === "image") {
-        const newMessages = [
-          ...messages,
-          { role: "user", content: message },
-          { role: "assistant", content: data.content },
-        ];
-        
-        // The assistant message will be at index newMessages.length - 1
-        const assistantIndex = newMessages.length - 1;
-        
-        setMessages(newMessages);
-        
-        // Update metadata for the assistant message using the actual array index
-        setMessageMetadata((prevMetadata) => {
-          const newMetadata = {
-            ...prevMetadata,
-            [assistantIndex]: { 
-              model: data.model || selectedModel, 
-              provider: data.provider || selectedProvider 
-            },
-          };
-          latestMetadataRef.current = newMetadata;
-          return newMetadata;
+        let assistantIndex = null; // zero-based index for assistant message
+        setMessages((prev) => {
+          assistantIndex = prev.length;
+          return [
+            ...prev,
+            { role: "assistant", content: data.content, animate: true },
+          ];
         });
-        
+
+        if (assistantIndex !== null) {
+          // Update metadata for the assistant message using the actual array index
+          setMessageMetadata((prevMetadata) => {
+            const newMetadata = {
+              ...prevMetadata,
+              [assistantIndex]: { 
+                model: data.model || selectedModel, 
+                provider: data.provider || selectedProvider 
+              },
+            };
+            latestMetadataRef.current = newMetadata;
+            return newMetadata;
+          });
+
+          setTimeMetaData((prevTimeMeta) => (
+            time ? { ...prevTimeMeta, [assistantIndex]: time } : prevTimeMeta
+          ));
+        }
+
         scrollToBottom();
 
         await fetch(
@@ -676,7 +798,7 @@ const Page = () => {
             },
             body: JSON.stringify({
               message: {
-                index: newMessages.length,
+                index: assistantIndex !== null ? assistantIndex + 1 : messages.length + 1,
                 role: "assistant",
                 content: data.content,
                 model: data.model,
@@ -695,30 +817,35 @@ const Page = () => {
       // Handle text response
       if (data.type === "text" && data.content) {
         const fullResponse = data.content.trimEnd();
-        const newMessages = [
-          ...messages,
-          { role: "user", content: message },
-          { role: "assistant", content: fullResponse },
-        ];
-        
-        // The assistant message will be at index newMessages.length - 1
-        const assistantIndex = newMessages.length - 1;
-        
-        setMessages(newMessages);
-        
-        // Update metadata for the assistant message using the actual array index
-        setMessageMetadata((prevMetadata) => {
-          const newMetadata = {
-            ...prevMetadata,
-            [assistantIndex]: { 
-              model: data.model || selectedModel, 
-              provider: data.provider || selectedProvider 
-            },
-          };
-          latestMetadataRef.current = newMetadata;
-          return newMetadata;
+        let assistantIndex = null; // zero-based index for assistant message
+
+        setMessages((prev) => {
+          assistantIndex = prev.length;
+          return [
+            ...prev,
+            { role: "assistant", content: fullResponse, animate: true },
+          ];
         });
-        
+
+        if (assistantIndex !== null) {
+          // Update metadata for the assistant message using the actual array index
+          setMessageMetadata((prevMetadata) => {
+            const newMetadata = {
+              ...prevMetadata,
+              [assistantIndex]: { 
+                model: data.model || selectedModel, 
+                provider: data.provider || selectedProvider 
+              },
+            };
+            latestMetadataRef.current = newMetadata;
+            return newMetadata;
+          });
+
+          setTimeMetaData((prevTimeMeta) => (
+            time ? { ...prevTimeMeta, [assistantIndex]: time } : prevTimeMeta
+          ));
+        }
+
         scrollToBottom();
 
         await fetch(
@@ -730,7 +857,7 @@ const Page = () => {
             },
             body: JSON.stringify({
               message: {
-                index: newMessages.length,
+                index: assistantIndex !== null ? assistantIndex + 1 : messages.length + 1,
                 role: "assistant",
                 content: fullResponse,
                 model: data.model,
@@ -1073,7 +1200,7 @@ const Page = () => {
         <div
           ref={messagesRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto scroll-smooth"
+          className="flex-1 overflow-y-auto"
         >
           {isMessagesLoading ? (
             <MessagesSkeleton />
@@ -1151,7 +1278,13 @@ const Page = () => {
                           <div className="flex items-center gap-2">
                             <i className="ri-cpu-line text-amber-400/50 text-sm"></i>
                             <span className="text-white/35 text-xs">
-                              {messageMetadata[index]?.model ? getModelDisplay(messageMetadata[index].model) : "AI"}
+                              {messageMetadata[index]?.model 
+                                ? getModelDisplay(messageMetadata[index].model) 
+                                : latestMetadataRef.current[index]?.model 
+                                  ? getModelDisplay(latestMetadataRef.current[index].model)
+                                  : selectedModel 
+                                    ? getModelDisplay(selectedModel)
+                                    : "AI"}
                             </span>
                           </div>
                           {timeMetaData[index] && (
@@ -1164,6 +1297,14 @@ const Page = () => {
                             <span className="text-red-400/80 text-sm">Error: No response received.</span>
                           ) : isValidImageUrl(message.content) ? (
                             <img src={message.content} alt="" className="max-w-md rounded-xl" />
+                          ) : message.animate ? (
+                            <TypewriterMessage 
+                              content={message.content}
+                              onComplete={() => {
+                                setMessages(prev => prev.map((m, i) => i === index ? { ...m, animate: false } : m));
+                              }}
+                              onUpdate={() => scrollToBottom("auto")}
+                            />
                           ) : (
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
