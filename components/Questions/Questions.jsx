@@ -4,7 +4,7 @@ const faqs = [
   {
     question: "What models do you provide?",
     answer:
-      "We provide a range of advanced AI models including GPT 4o, Claude 3.5 Sonnet, Flux 1.1 Pro, Midjourney, and many more. These models are designed to cater to various applications.",
+      "We provide a range of advanced open-source AI models including LLaMA 3.3, Mistral, Qwen, Gemma, DeepSeek, and many more. These models are designed to cater to various applications.",
   },
   {
     question: "Are there any limits?",
@@ -19,7 +19,7 @@ const faqs = [
   {
     question: "Can I use these AI models for commercial purposes?",
     answer:
-      "Yes, they can be used for commercial purposes, including models like GPT 4o and Flux. However, please check each individual model's policies for specific terms and conditions.",
+      "Yes, they can be used for commercial purposes. However, please check each individual open-source model's license for specific terms and conditions.",
   },
   {
     question: "Do I need an account to use the platform?",

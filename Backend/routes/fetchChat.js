@@ -24,7 +24,8 @@ router.get('/:chatId', async (c) => {
       formattedMessages.push({
         index: index,
         role: message.role,
-        content: message.content
+        content: message.content,
+        images: message.images || []
       })
 
       metaData[index] = {

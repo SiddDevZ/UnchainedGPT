@@ -7,6 +7,9 @@
 *{
     color: white;
 }
+html {
+      background-color: #111;
+}
 
 .text-btn {
   transition: all 0.2s;

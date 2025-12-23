@@ -7,6 +7,7 @@ const messageSchema = new mongoose.Schema({
   provider: { type: String, required: false },
   timeItTook: { type: Number, required: false },
   content: { type: String, required: true },
+  images: { type: [String], required: false },
   timestamp: { type: Date, default: Date.now },
 });
 

@@ -132,6 +132,13 @@ const TypewriterMessage = ({ content, onComplete, onUpdate }) => {
 };
 
 const Page = () => {
+  const suggestionCards = [
+    { icon: "ri-quill-pen-line", color: "blue-400", title: "Creative writing", description: "Draft a story or poem" },
+    { icon: "ri-code-s-slash-line", color: "emerald-400", title: "Code assistant", description: "Debug or write code" },
+    { icon: "ri-lightbulb-line", color: "amber-400", title: "Explain concepts", description: "Learn something new" },
+    { icon: "ri-brain-line", color: "purple-400", title: "Brainstorming", description: "Generate new ideas" },
+  ];
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -970,7 +977,7 @@ const Page = () => {
           <i className={`ri-arrow-down-s-line text-white/40 group-hover:text-white/60 transition-all ${isOpen ? "rotate-180" : "rotate-0"}`}></i>
         </button>
         {isOpen && (
-          <div className={`absolute left-0 bottom-full mb-2 w-80 bg-[#1a1a1a] rounded-xl border border-white/[0.1] shadow-2xl z-[100] overflow-hidden transition-all duration-200 ${
+          <div className={`absolute left-0 bottom-full mb-2 w-80 bg-[#141414] rounded-xl border border-white/[0.1] shadow-2xl z-[100] overflow-hidden transition-all duration-200 ${
             isClosing ? "animate-out fade-out slide-out-to-bottom-2" : "animate-in fade-in slide-in-from-bottom-2"
           }`}>
             <div className="p-3 border-b border-white/[0.06]">
@@ -981,7 +988,7 @@ const Page = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search models..."
-                  className="w-full bg-white/[0.05] rounded-lg pl-9 pr-3 py-2.5 text-sm text-white/80 placeholder-white/30 focus:outline-none transition-all"
+                  className="w-full bg-white/[0.04] rounded-lg pl-9 pr-3 py-2.5 text-sm text-white/80 placeholder-white/30 focus:outline-none transition-all"
                   autoFocus
                 />
               </div>
@@ -1080,10 +1087,10 @@ const Page = () => {
           <>
             {/* Sidebar Header */}
             <div className="p-4 border-b border-white/[0.06]">
-              <h1 className="text-yellow-500/60 text-lg font-bold tracking-tight mb-4 font-mono">UnchainedGPT</h1>
+              <a href="/" className="text-yellow-500/60 text-lg font-bold tracking-tight mb-4 font-mono">UnchainedGPT</a>
               <button
                 onClick={newChat}
-                className="w-full flex items-center gap-2.5 opacity-75 px-0 py-2 rounded-lg text-white/60 hover:text-white/90 hover:opacity-90 transition-all text-sm"
+                className="w-full flex items-center gap-2.5 opacity-75 px-0 py-2 mt-6 rounded-lg text-white/60 hover:text-white/90 hover:opacity-90 transition-all text-sm"
               >
                 <i className="ri-quill-pen-ai-line text-lg"></i>
                 <span>New Chat</span>
@@ -1209,42 +1216,27 @@ const Page = () => {
               {/* Welcome Message */}
               {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                <h2 className="text-[1.7rem] font-medium text-white/90 mb-8">
-                  Hey, How can I help?
+                <h2 className="text-2xl font-medium text-white/90 mb-8">
+                  How can I help you today?
                 </h2>
-                {/* <p className="text-white/40 mb-10">How can I help you today?</p> */}
                 
-                {/* Suggestion Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl px-4">
-                  <button className="group px-5 cursor-default select-text py-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-left">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      {/* <span className="text-xl">💡</span> */}
-                      <span className="text-blue-400/70 text-xs font-semibold font-inter tracking-wider">Creative</span>
-                    </div>
-                    <div className="text-white/60 text-sm leading-relaxed">
-                      Generate creative content, stories, and ideas
-                    </div>
-                  </button>
-                  
-                  <button className="group px-5 cursor-default select-text py-4 rounded-2xl bg-purple-500/5 border border-purple-500/10 text-left">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      {/* <span className="text-xl">🧠</span> */}
-                      <span className="text-purple-400/70 text-xs font-semibold font-inter tracking-wider">Learn</span>
-                    </div>
-                    <div className="text-white/60 text-sm leading-relaxed">
-                      Explain concepts, answer questions, and teach
-                    </div>
-                  </button>
-                  
-                  <button className="group px-5 cursor-default select-text py-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-left">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      {/* <span className="text-xl">⚡</span> */}
-                      <span className="text-emerald-400/70 text-xs font-semibold font-inter tracking-wider">Code</span>
-                    </div>
-                    <div className="text-white/60 text-sm leading-relaxed">
-                      Write, debug, and explain code efficiently
-                    </div>
-                  </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl px-4">
+                  {suggestionCards.map((card, index) => (
+                    <button 
+                      key={index} 
+                      onClick={() => {
+                        setInputValue(card.description);
+                        inputRef.current?.focus();
+                      }}
+                      className="text-left p-4 rounded-xl border border-white/[0.06] bg-white/[0.005] hover:bg-white/[0.03] transition-colors ease-out group flex items-center gap-3"
+                    >
+                      <i className={`${card.icon} text-${card.color} text-xl flex-shrink-0`}></i>
+                      <div className="flex-1">
+                        <div className="text-white/80 text-sm font-medium mb-1">{card.title}</div>
+                        <div className="text-white/40 text-xs">{card.description}</div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -1337,7 +1329,7 @@ const Page = () => {
                       <div className="flex items-center gap-3 mt-2 px-2">
                         <button
                           onClick={() => handleCopy(index)}
-                          className="flex items-center gap-1.5 text-white/20 opacity-80 hover:text-white/40 transition-colors text-xs"
+                          className="flex items-center gap-1.5 text-white/20 opacity-60 hover:text-white/40 transition-colors text-xs"
                         >
                           <i className={`${copyIndex === index ? "ri-check-line text-emerald-400" : "ri-file-copy-line"}`}></i>
                           <span>{copyIndex === index ? "Copied" : "Copy"}</span>
@@ -1368,9 +1360,9 @@ const Page = () => {
 
         {/* Input Area */}
         <div className=" bg-[#0f0f0f00]">
-          <div className="max-w-3xl mx-auto px-4 pb-4">
+          <div className="max-w-3xl mx-auto px-4 pb-3">
             <form onSubmit={handleInputSubmit}>
-              <div className="bg-[#1a1a1a] rounded-2xl border border-white/[0.08]">
+              <div className="bg-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/[0.12] shadow-lg">
                 <div className="flex items-end gap-2 px-5 py-4">
                   <textarea
                     ref={inputRef}
@@ -1385,7 +1377,7 @@ const Page = () => {
                     <button
                       type="button"
                       onClick={handleStopGeneration}
-                      className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-all flex-shrink-0"
+                      className="h-9 w-9 rounded-full bg-white/[0.12] hover:bg-white/[0.18] flex items-center justify-center transition-all flex-shrink-0"
                     >
                       <i className="ri-stop-fill text-white/70 text-base"></i>
                     </button>
@@ -1399,9 +1391,12 @@ const Page = () => {
                     </button>
                   )}
                 </div>
-                <div className="px-4 pb-3 border-t border-white/[0.04] pt-3">
+                <div className="px-4 pb-3 border-t border-white/[0.06] pt-3">
                   <ModelDropdown isOpen={modelDropdownOpen} onToggle={setModelDropdownOpen} />
                 </div>
+              </div>
+              <div className="text-center mt-1.5">
+                <p className="text-[11px] text-white/30">AI can make mistakes. Check important info.</p>
               </div>
             </form>
           </div>

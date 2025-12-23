@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import Navbar from "../components/Navbar/Navbar";
@@ -8,6 +8,7 @@ import ShinyText from "../components/ShinyText/ShinyText";
 import { BorderBeam } from "../components/ui/border-beam";
 // import FlickeringGrid from "../components/ui/flickering-grid";
 import dynamic from "next/dynamic";
+import Lenis from "lenis";
 
 const Particles = dynamic(() => import("../components/ui/particles"), {
   ssr: false,
@@ -49,93 +50,97 @@ export function Home() {
     }
   }, [resolvedTheme]);
 
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      smoothTouch: false,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
+
   return (
-    <div
-      className=""
-      style={{ backgroundColor: bgColor }}
-    >
-      <div className="dark flex mx-auto max-w-[200rem] h-max pb-[1rem] w-full flex-col overflow-hidden">
+    <div className="" style={{ backgroundColor: bgColor }}>
+      <div className="dark flex mx-auto max-w-[88rem] h-max pb-[1rem] w-full flex-col overflow-hidden">
         <Navbar />
         <div className="md:w-[75%] sm:w-[85%] xs:w-[85%] xss:w-[95%] flex flex-col justify-center items-center mx-auto">
-          <div className="flex flex-col mt-[2.7rem] h-full">
-            <div className="hero-animate-down hero-animate-delay-0">
+          <div className="flex flex-col mt-24 md:mt-24 h-full">
+            <div className="hero-animate-down hero-animate-delay-0 mb-6">
               <ShinyText />
             </div>
-            <h1 className="hero-animate hero-animate-delay-1 w-[90%] mx-auto font-semibold py-6 text-center mt-1 md:text-8xl sm:text-7xl xs:text-6xl xss:text-4xl font-inter text-white leading-none text-transparent">
-              Any AI Model in One Place for Free
+            <h1 className="hero-animate hero-animate-delay-1 max-w-[55rem] mx-auto font-bold text-center md:text-[4.5rem] md:leading-[1.1] sm:text-6xl xs:text-5xl xss:text-4xl font-inter bg-gradient-to-b from-white via-white to-white/70 bg-clip-text text-transparent tracking-tight">
+              Access Any Open-Source AI Model in One Place
             </h1>
-            <h4 className="hero-animate hero-animate-delay-2 text-center font-inter font-medium text-[#cccccc] sm:text-lg xss:text-sm sm:w-[70%] xss:w-[95%] mx-auto">
-              Discover the power of AI with Free Access to ChatGPT 4o, MidJourney,
-              o3-mini, Flux 1.1, Claude, and alot more. One platform to create,
-              innovate, and explore without limits.
-            </h4>
-            <div className="hero-animate hero-animate-delay-3 mx-auto mt-6 space-x-5 font-inter font-medium">
+            <p className="hero-animate hero-animate-delay-2 text-center font-inter text-white/60 sm:text-xl xss:text-base sm:w-[65%] xss:w-[90%] mx-auto mt-3 leading-relaxed">
+              Harness the power of cutting-edge open-source AI models like LLaMA, Mistral, Qwen, and more. No limits. No costs.
+              {/* <span className="block mt-1">No limits. No costs. Just pure innovation.</span> */}
+            </p>
+            <div className="hero-animate hero-animate-delay-3 flex flex-wrap justify-center gap-4 mt-10">
               <Link href="/register">
-                <button className="md:px-6 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md ">
+                <button className="md:px-6 md:py-[0.6rem] font-semibold xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-out rounded-md ">
                   Get Started for free
                 </button>
               </Link>
-              <Link href="/register">
-                <button className="md:px-6 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-white xss:text-[1rem] border border-[#838383] bg-black text-btn transition-all ease-in-out rounded-md ">
-                  Try it out
+              <Link href="/chat">
+                <button className="px-6 py-[0.6rem] text-base font-semibold text-white/85 bg-white/[0.08] rounded-xl border border-white/[0.1] hover:border-white/[0.1] transition-all ease-out hover:scale-[1.025] active:scale-[0.98]">
+                  Try Demo
                 </button>
               </Link>
             </div>
 
-            <div className="relative hero-animate hero-animate-delay-1 relativee back my-32 flex h-[500px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border-2 bg-background">
-              <img
-                src="https://i.imgur.com/OmNuaFU.png"
-                alt="Background"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <BorderBeam
-                size={250}
-                colorFrom={"#e98c00ad"}
-                colorTo={"#e90090ad"}
-                duration={10}
-                delay={9}
-              />
+            <div className="relative hero-animate hero-animate-delay-1 my-24 md:my-32 w-full">
+              <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-transparent p-2 shadow-2xl">
+                <div className="rounded-xl overflow-hidden bg-black">
+                  <img
+                    src="https://i.imgur.com/OmNuaFU.png"
+                    alt="UnchainedGPT Interface"
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+                <div className="absolute -inset-[1px] bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 rounded-2xl blur-2xl -z-10 opacity-50"></div>
+              </div>
             </div>
           </div>
-          <div className="flex flex-col mt-[2rem]">
-            <h4
-              className="text-[#46464c] font-inter font-semibold sm:text-base xss:text-sm text-center"
-            >
-              ALL THE MODELS YOU WILL EVER NEED
-            </h4>
-            <div className="flex justify-center">
-              <div
-                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5 p-4 place-items-center"
-              >
-                <div className="flex items-center space-x-3 h-10">
-                  <img src="openai.svg" className="w-6 h-6 invert" alt="" />
-                  <span className="text-lg font-medium">ChatGPT 4.0</span>
+          <div className="flex flex-col mt-16">
+            <p className="text-white/40 font-inter font-base sm:text-sm text-xs tracking-wider uppercase text-center mb-8">
+              Powered by Leading Open-Source Models
+            </p>
+            <div className="flex flex-col justify-center">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-8 items-center">
+                <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity">
+                  <span className="text-base font-semibold text-white/70">LLaMA</span>
                 </div>
-                <div className="flex items-center space-x-3 h-10">
-                  <span className="text-lg">FLUX 1.1</span>
+                <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity">
+                  <span className="text-base font-semibold text-white/70">Mistral</span>
                 </div>
-                <div className="flex items-center space-x-3 h-10">
-                  <img src="claude.svg" className="w-6 h-6 invert" alt="" />
-                  <span className="text-lg font-medium">Claude 3.5</span>
+                <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity">
+                  <span className="text-base font-semibold text-white/70">Qwen</span>
                 </div>
-                <div className="flex items-center space-x-3 h-10">
-                  <span className="text-lg font-medium">MidJourney</span>
+                <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity">
+                  <span className="text-base font-semibold text-white/70">FLUX</span>
                 </div>
-                <div className="flex items-center space-x-3 h-10">
-                  <img src="meta.svg" className="w-6 h-6" alt="" />
-                  <span className="text-lg font-medium">LLaMA</span>
+                <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity">
+                  <span className="text-base font-semibold text-white/70">DeepSeek</span>
                 </div>
-                <div className="flex items-center space-x-3 h-10">
-                  <img src="openai.svg" className="w-6 h-6 invert" alt="" />
-                  <span className="text-lg font-medium">o1-preview</span>
+                <div className="flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity">
+                  <span className="text-base font-semibold text-white/70">Gemma</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div
-            className="flex justify-center mt-[1rem] z-50 overflow-hidden"
-          >
+          <div className="flex justify-center mt-[1rem] z-50 overflow-hidden">
             <div className="absolute flex justify-center pt-[4rem] w-full h-full overflow-hidden">
               <div
                 className="w-[200vw] h-[200vw] absolute lg:translate-y-16 md:translate-y-20 sm:translate-y-24 xs:translate-y-32 xss:translate-y-28 opacity-30"
@@ -146,8 +151,8 @@ export function Home() {
                   backgroundSize: "contain",
                   filter: "drop-shadow(0 0 10.5em rgba(233, 140, 0, 0.4))",
                   "@media screen and (-moz-images-in-menus:0)": {
-                    filter: "drop-shadow(0 0 10.5em rgba(233, 140, 0, 0.6))"
-                  }
+                    filter: "drop-shadow(0 0 10.5em rgba(233, 140, 0, 0.6))",
+                  },
                 }}
               ></div>
             </div>
@@ -156,9 +161,9 @@ export function Home() {
                 Packed with hundreds of features
               </h2>
               <h4 className="text-center font-inter font-medium text-[#cccccc] sm:text-base xss:text-sm sm:w-[60%] mt-3 xss:w-[95%] mx-auto relative z-10">
-                From text to image generation to even normal text generation, our
-                platform offers all the latest models for free. It can even write
-                your next big idea for you.
+                From text to image generation to even normal text generation,
+                our platform offers all the latest models for free. It can even
+                write your next big idea for you.
               </h4>
               <div className="border-[3px] flex border-dotted mt-14 relative z-10 flex-wrap">
                 <div className="md:w-[55%] xss:w-[100%] min-w-[310px] px-8 py-8 border-b md:border-r border-[#ffffff20] h-[43rem] flex flex-col">
@@ -166,9 +171,9 @@ export function Home() {
                     Generate images with text
                   </h2>
                   <h4 className="font-inter font-medium text-[#cccccc] sm:text-sm xss:text-sm sm:w-[90%] mt-3 xss:w-[96%] relative z-10">
-                    Generate stunning images from text prompts using the latest
-                    models like Flux Pro, Midjourney, optimized for bulk creation
-                    at lightning speed.
+                    Generate stunning images from text prompts using open-source
+                    models like FLUX, optimized for bulk creation at lightning
+                    speed.
                   </h4>
                   <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
                     <img
@@ -183,8 +188,9 @@ export function Home() {
                     Text with Generative AI
                   </h2>
                   <h4 className="font-inter font-medium text-[#cccccc] sm:text-sm xss:text-sm sm:w-[90%] mt-3 xss:w-[96%] relative z-10">
-                    Transform ideas into reality using powerful AI models like
-                    GPT-4o, Claude, and more, built for creativity and efficiency.
+                    Transform ideas into reality using powerful open-source AI
+                    models like LLaMA, Mistral, Qwen, and more, built for
+                    creativity and efficiency.
                   </h4>
                   <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
                     <img
@@ -201,9 +207,9 @@ export function Home() {
                     Generate in seconds
                   </h2>
                   <h4 className="font-inter font-medium text-[#cccccc] sm:text-sm xss:text-sm sm:w-[90%] mt-3 xss:w-[96%] relative z-10">
-                    With access to models like gpt-4o, Flux Pro, your response is
-                    generated in seconds, delivering fast, accurate results every
-                    time.
+                    With access to models like LLaMA 3.3, FLUX, your response is
+                    generated in seconds, delivering fast, accurate results
+                    every time.
                   </h4>
                   <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
                     <Lottie animationData={light}></Lottie>
@@ -211,30 +217,122 @@ export function Home() {
                 </div>
                 <div className="md:w-[55%] xss:w-[100%]  min-w-[310px] px-8 py-8  h-[22rem] flex flex-col">
                   <h2 className="font-inter text-2xl font-medium">
-                    We support all LLMs
+                    We support open-source LLMs
                   </h2>
                   <h4 className="font-inter font-medium text-[#cccccc] sm:text-sm xss:text-sm sm:w-[90%] mt-3 xss:w-[96%] relative z-10">
-                    Whether it's OpenAI, Claude, or Your Mom's LLM, we support
-                    everything. giving you the freedom to choose the best AI for
-                    your needs.
+                    From LLaMA to Mistral to DeepSeek, we support the best
+                    open-source models, giving you the freedom to choose the
+                    best AI for your needs.
                   </h4>
                   <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
                     <MorphingText
-                      texts={[
-                        "GPT-4o",
-                        "Claude 3.5",
-                        "Midjourney",
-                        "Flux 1.1 Pro",
-                      ]}
+                      texts={["LLaMA 3", "Mistral", "Qwen 2.5", "Gemma"]}
                     />
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div
-            className="flex flex-col w-[100%] mt-[12.5rem] relative"
-          >
+          <div className="flex px-3 md:px-0 flex-col w-full mt-[10rem] relative z-10">
+            <h2 className="text-center font-inter font-medium text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-10 relative z-10">
+              Why Choose UnchainedGPT?
+            </h2>
+            <h4 className="text-center font-inter font-medium text-[#cccccc] sm:text-base xss:text-sm sm:w-[60%] mt-3 xss:w-[90%] mx-auto relative z-10">
+              Experience the true potential of open-source AI without the limitations of proprietary platforms.
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 w-full">
+              {[
+                {
+                  title: "Uncensored Access",
+                  desc: "Access raw model outputs without arbitrary guardrails. Get the unfiltered truth from the world's best open models.",
+                  icon: "ri-shield-check-line"
+                },
+                {
+                  title: "Privacy First",
+                  desc: "Your conversations are private. We don't train on your data or sell your information to third parties.",
+                  icon: "ri-lock-password-line"
+                },
+                {
+                  title: "Always Cutting Edge",
+                  desc: "New open-source models are added within hours of release. Stay ahead of the curve with the latest tech.",
+                  icon: "ri-rocket-line"
+                }
+              ].map((item, i) => (
+                <div key={i} className="group px-8 py-6 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
+                  <div className="w-12 h-12 rounded-lg bg-white/[0.05] flex items-center justify-center mb-5">
+                    <i className={`${item.icon} text-2xl text-white/80`}></i>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">{item.title}</h3>
+                  <p className="text-white/60 leading-relaxed text-sm">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col px-3 md:px-0 md:flex-row items-center justify-between w-full mt-[10rem] gap-12 relative z-10">
+            <div className="md:w-1/2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.1] mb-6">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-xs font-medium text-white/70 uppercase tracking-wider">Live Model Switching</span>
+              </div>
+              <h2 className="font-inter font-semibold text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-tight mb-6">
+                Find the Perfect Model <br/> <span className="text-white/40">For Every Task</span>
+              </h2>
+              <p className="font-inter text-[#cccccc]/90 text-base leading-relaxed mb-8">
+                Not all models are created equal. Switch instantly between LLaMA for reasoning, Mistral for coding, and Qwen for math. Compare results in real-time to get the best output.
+              </p>
+              
+              <div className="space-y-4">
+                {[
+                  "Instant context switching",
+                  "Compare outputs side-by-side",
+                  "No subscriptions at all"
+                ].map((feature, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-white/[0.08] border border-white/[0.1] flex items-center justify-center">
+                      <i className="ri-check-line text-white/70 text-xs"></i>
+                    </div>
+                    <span className="text-white/70 text-sm">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="md:w-1/2 w-full">
+              <div className="relative rounded-2xl border border-white/[0.08] bg-black/40 backdrop-blur-sm px-6 py-6">
+                <div className="space-y-4">
+                  {[
+                    { name: "LLaMA 3.3", type: "Reasoning & Logic", icon: "ri-brain-line" },
+                    { name: "Mistral Large", type: "Code Generation", icon: "ri-code-s-slash-line" },
+                    { name: "Qwen 2.5", type: "Mathematics", icon: "ri-function-line" },
+                    { name: "DeepSeek", type: "Technical Tasks", icon: "ri-tools-line" },
+                  ].map((model, i) => (
+                    <div key={i} className="group flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] transition-all">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center transition-colors">
+                          <i className={`${model.icon} text-white/70 text-lg`}></i>
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-white/90 mb-0.5">{model.name}</div>
+                          <div className="text-xs text-white/40">{model.type}</div>
+                        </div>
+                      </div>
+                      <i className="ri-arrow-right-line text-white/30 transition-colors"></i>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-6 pt-4 border-t border-white/[0.06]">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-white/40">50+ Available Models</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col w-[100%] mt-[12.5rem] relative">
             <h2 className="text-center font-inter font-medium text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-10 relative xs:w-full xss:w-[97%] z-10">
               Loved by people around the world
             </h2>
@@ -243,11 +341,17 @@ export function Home() {
               users everywhere.
             </h4>
             <Reviews />
+            <div className="text-center mt-7">
+              <p className="text-xs text-neutral-600 uppercase tracking-wider">
+                * Testimonials are fictional
+              </p>
+              <p className="text-xs text-neutral-600 mt-1">
+                For demonstration purposes only
+              </p>
+            </div>
           </div>
 
-          <div
-            className="flex flex-col w-[100%] mt-[8.5rem] relative"
-          >
+          <div className="flex flex-col w-[100%] mt-[8.5rem] relative">
             <h2 className="text-center font-inter font-medium text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-10 relative xs:w-full xss:w-[97%] z-10">
               Frequently asked questions
             </h2>
@@ -280,7 +384,10 @@ export function Home() {
                 text, everything you need is just a click away.
               </p>
               {/* <RainbowButton>Get Started for free</RainbowButton> */}
-              <Link href="/register" className="md:px-6 z-10 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md ">
+              <Link
+                href="/register"
+                className="md:px-6 z-10 md:py-[0.5rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md "
+              >
                 Get Started for free
               </Link>
             </div>
@@ -296,7 +403,7 @@ export function Home() {
         <Particles
           className="absolute -z-1 inset-0"
           quantity={70}
-          ease={80}
+          ease={10}
           color={color}
           refresh
         />

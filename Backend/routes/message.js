@@ -54,6 +54,7 @@ router.post('/:chatId', async (c) => {
       message_id: message.index,
       role: message.role,
       content: conentMessage || "",
+      images: message.images || [],
     }
 
     // Add additional fields for AI messages

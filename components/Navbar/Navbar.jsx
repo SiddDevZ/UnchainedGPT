@@ -5,35 +5,39 @@ import Link from "next/link";
 
 const Navbar = () => {
   return (
-    <div className="flex justify-between items-center mx-4 md:mx-16 lg:mx-32 3xl:mx-36 py-6">
-      <div className="text-xl flex justify-center space-x-12 font-inter items-center">
-        <div className="flex items-center space-x-2.5 font-bold">
-          <img
-            src="/unchained.png"
-            alt="Zenos AI Logo"
-            className="sm:w-9 sm:h-9 xss:w-7 xss:h-7"
-          />
-          <h2 className="sm:text-[1rem] xss:text-[0.95rem] font-inter leading-5 font-medium">
-            UnchainedGPT
-          </h2>
+    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-black/40">
+      <div className="flex mt-2 justify-between items-center mx-4 md:mx-16 lg:mx-24 py-4">
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center space-x-3 group">
+            <div className="relative">
+              <img
+                src="/unchained.png"
+                alt="UnchainedGPT Logo"
+                className="w-8 h-8 transition-transform group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
+            <span className="text-lg font-semibold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+              UnchainedGPT
+            </span>
+          </Link>
         </div>
-        {/* <h3 className='text-[0.9rem] leading-5 text-[#dadada]'>Features</h3>
-        <h3 className='text-[0.9rem] leading-5 text-[#dadada]'>Contact</h3>
-        <h3 className='text-[0.9rem] leading-5 text-[#dadada]'>Features</h3> */}
+        
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="hidden sm:flex items-center px-4 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/[0.05] ease-out hover:scale-[1.025] rounded-lg transition-all"
+          >
+            Login
+          </Link>
+          <Link href="/register">
+            <button className="px-5 py-2 text-sm font-semibold text-black bg-white/90 hover:bg-white/90 rounded-lg transition-all ease-out hover:scale-[1.025] active:scale-[0.98] shadow-lg shadow-white/10">
+              Get Started
+            </button>
+          </Link>
+        </div>
       </div>
-      <div className="space-x-5 font-inter font-medium">
-        <Link
-          href="/login"
-          className="md:px-6 md:py-2 xs:px-3.5 xs:py-1.5 xss:px-3 xss:py-1.5 hover:scale-105 xss:text-[1rem] hover:bg-[#161616] rounded-md transition-all ease-in-out"
-        >
-          Login
-        </Link>
-        {/* <button className='md:px-4 md:py-[0.37rem] xs:px-3.5 xs:py-1.5 xss:px-3 hover:scale-[1.025] xss:py-1.5 items-center text-black xss:text-[1rem] bg-[#efefef] hover:bg-[#fdfdfd] transition-all ease-in-out rounded-md '>Get Started</button> */}
-        <Link target="_blank" href="https://x.com/UnchainedGPT">
-          <RainbowButton>Twitter</RainbowButton>
-        </Link>
-      </div>
-    </div>
+    </nav>
   );
 };
 
