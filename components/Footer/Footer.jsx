@@ -18,10 +18,10 @@ const Footer = () => {
           Made by{" "}
           <a
             target="_blank"
-            href="https://x.com/epicsidd"
+            href="https://x.com/buildwithsid"
             className="font-medium underline decoration-[#a9a9a9] transition-all hover:decoration-white"
           >
-            Siddharth and Team
+            Siddharth Meena
           </a>{" "}
           ❤️
         </p>
@@ -29,13 +29,13 @@ const Footer = () => {
       <div className="flex xss:justify-center sm:justify-start items-center space-x-3 text-sm">
         <a
           target="_blank"
-          href="mailto:siddz.dev@gmail.com"
-          className="ri-at-line sm:text-[2.2rem] xss:text-[2rem] text-black dark:text-white transition-all duration-300 ease-in-out hover:scale-110 cursor-pointer"
+          href="mailto:siddharth@onavix.com"
+          className="ri-at-line sm:text-[2.2rem] xss:text-[2rem] text-black dark:text-white transition-all duration-300 ease-out hover:scale-105 cursor-pointer"
         ></a>
         <a
           target="_blank"
-          href="https://x.com/UnchainedGPT"
-          className="ri-twitter-x-fill sm:text-[2.2rem] xss:text-[2rem] text-black dark:text-white transition-all duration-300 ease-in-out hover:scale-110 cursor-pointer"
+          href="https://x.com/buildwithsid"
+          className="ri-twitter-x-fill sm:text-[2.2rem] xss:text-[2rem] text-black dark:text-white transition-all duration-300 ease-out hover:scale-105 cursor-pointer"
         ></a>
         {/* <a
           target="_blank"

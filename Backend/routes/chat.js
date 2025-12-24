@@ -51,6 +51,8 @@ async function generateAndUpdateTitle(chatId, prompt) {
 
     let modelSuccess = false;
 
+    // console.log(`Trying model ${model} for title generation...`);
+
     for (const apiKey of apiKeys) {
       try {
         const payload = {

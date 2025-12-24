@@ -99,11 +99,11 @@ export function Home() {
               </Link>
             </div>
 
-            <div className="relative hero-animate hero-animate-delay-1 my-24 md:my-32 w-full">
+            <div className="relative hero-animate hero-animate-delay-1 my-24 md:my-24 w-full">
               <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-transparent p-2 shadow-2xl">
                 <div className="rounded-xl overflow-hidden bg-black">
                   <img
-                    src="https://i.imgur.com/OmNuaFU.png"
+                    src="unchained_showcase.webp"
                     alt="UnchainedGPT Interface"
                     className="w-full h-auto object-cover"
                   />
@@ -237,8 +237,8 @@ export function Home() {
             <h2 className="text-center font-inter font-medium text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-10 relative z-10">
               Why Choose UnchainedGPT?
             </h2>
-            <h4 className="text-center font-inter font-medium text-[#cccccc] sm:text-base xss:text-sm sm:w-[60%] mt-3 xss:w-[90%] mx-auto relative z-10">
-              Experience the true potential of open-source AI without the limitations of proprietary platforms.
+            <h4 className="text-center font-inter font-medium text-[#cccccc]/90 sm:text-base xss:text-sm sm:w-[60%] mt-3 xss:w-[90%] mx-auto relative z-10">
+              Experience the true potential of open-source AI without the limitations.
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 w-full">
@@ -270,62 +270,56 @@ export function Home() {
             </div>
           </div>
 
-          <div className="flex flex-col px-3 md:px-0 md:flex-row items-center justify-between w-full mt-[10rem] gap-12 relative z-10">
-            <div className="md:w-1/2">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.1] mb-6">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="text-xs font-medium text-white/70 uppercase tracking-wider">Live Model Switching</span>
+          <div className="flex flex-col px-3 md:px-0 md:flex-row items-center justify-between w-full mt-[10rem] gap-16 relative z-10">
+            <div className="md:w-[45%]">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-white/[0.08] to-white/[0.04] border border-white/[0.12] mb-6 backdrop-blur-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                <span className="text-[11px] font-semibold text-white/60 uppercase tracking-[0.1em]">Live Model Switching</span>
               </div>
-              <h2 className="font-inter font-semibold text-[#ffffff] sm:text-5xl xs:text-4xl xss:text-4xl leading-tight mb-6">
-                Find the Perfect Model <br/> <span className="text-white/40">For Every Task</span>
+              <h2 className="font-inter font-bold text-[#ffffff]/90 sm:text-[3.2rem] xs:text-4xl xss:text-4xl sm:leading-[1.1] xs:leading-tight mb-4 tracking-tight">
+                Find Your Perfect Model
               </h2>
-              <p className="font-inter text-[#cccccc]/90 text-base leading-relaxed mb-8">
-                Not all models are created equal. Switch instantly between LLaMA for reasoning, Mistral for coding, and Qwen for math. Compare results in real-time to get the best output.
+              <p className="font-inter text-white/60 text-[15px] leading-[1.7] mb-6 max-w-md">
+                Not all models are created equal. Switch instantly between specialized AI models and compare results in real-time to get the best output for every task.
               </p>
               
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {[
-                  "Instant context switching",
-                  "Compare outputs side-by-side",
-                  "No subscriptions at all"
+                  { text: "Instant model switching", icon: "ri-refresh-line" },
+                  { text: "Compare outputs side-by-side", icon: "ri-split-cells-horizontal" },
+                  { text: "No subscriptions at all", icon: "ri-money-dollar-circle-line" }
                 ].map((feature, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-white/[0.08] border border-white/[0.1] flex items-center justify-center">
-                      <i className="ri-check-line text-white/70 text-xs"></i>
+                  <div key={i} className="flex items-center gap-3.5 group">
+                    <div className="w-6 h-6 rounded-full bg-white/[0.06] border border-white/[0.12] flex items-center justify-center group-hover:bg-white/[0.1] group-hover:border-white/[0.2] transition-all duration-300">
+                      <i className={`${feature.icon} text-white/70 text-sm group-hover:text-white/90 transition-colors`}></i>
                     </div>
-                    <span className="text-white/70 text-sm">{feature}</span>
+                    <span className="text-white/70 text-[14px] font-medium group-hover:text-white/90 transition-colors">{feature.text}</span>
                   </div>
                 ))}
               </div>
             </div>
             
-            <div className="md:w-1/2 w-full">
-              <div className="relative rounded-2xl border border-white/[0.08] bg-black/40 backdrop-blur-sm px-6 py-6">
-                <div className="space-y-4">
-                  {[
-                    { name: "LLaMA 3.3", type: "Reasoning & Logic", icon: "ri-brain-line" },
-                    { name: "Mistral Large", type: "Code Generation", icon: "ri-code-s-slash-line" },
-                    { name: "Qwen 2.5", type: "Mathematics", icon: "ri-function-line" },
-                    { name: "DeepSeek", type: "Technical Tasks", icon: "ri-tools-line" },
-                  ].map((model, i) => (
-                    <div key={i} className="group flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center transition-colors">
-                          <i className={`${model.icon} text-white/70 text-lg`}></i>
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-white/90 mb-0.5">{model.name}</div>
-                          <div className="text-xs text-white/40">{model.type}</div>
-                        </div>
-                      </div>
-                      <i className="ri-arrow-right-line text-white/30 transition-colors"></i>
+            <div className="md:w-[52%] w-full">
+              <div className="border border-white/[0.08] rounded-xl overflow-hidden bg-white/[0.02]">
+                {[
+                  { name: "LLaMA 3.3 70B", type: "Reasoning & Logic" },
+                  { name: "Mistral Large", type: "Code Generation" },
+                  { name: "Qwen 2.5 72B", type: "Mathematics" },
+                  { name: "DeepSeek V3", type: "Technical Tasks" },
+                ].map((model, i) => (
+                  <div key={i} className={`group flex items-center justify-between px-6 py-4 transition-colors ${i !== 3 ? 'border-b border-white/[0.06]' : ''}`}>
+                    <div className="flex flex-col">
+                      <div className="text-[14px] font-medium text-white/90 mb-1">{model.name}</div>
+                      <div className="text-[13px] text-white/40">{model.type}</div>
                     </div>
-                  ))}
-                </div>
+                    <i className="ri-arrow-right-line text-white/30 "></i>
+                  </div>
+                ))}
                 
-                <div className="mt-6 pt-4 border-t border-white/[0.06]">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/40">50+ Available Models</span>
+                <div className="px-6 py-4 border-t border-white/[0.08] bg-white/[0.01]">
+                  <div className="flex items-center justify-between text-[13px]">
+                    <span className="text-white/40">50+ models available</span>
+                    <span className="text-white/50">All Active</span>
                   </div>
                 </div>
               </div>
@@ -374,7 +368,7 @@ export function Home() {
               width={gridWidth}
             /> */}
             <div className="flex flex-col justify-center items-center w-full h-full mx-auto my-auto">
-              <h3 className="text-center font-inter font-extrabold text-[#f5f5f5] sm:text-6xl xs:text-4xl xss:text-4xl leading-10 relative xss:w-[90%] z-10">
+              <h3 className="text-center font-inter font-extrabold text-[#f5f5f5] sm:text-5xl xs:text-4xl xss:text-4xl leading-10 relative xss:w-[90%] z-10">
                 What are you waiting for?? <br />
                 Join us now!
               </h3>

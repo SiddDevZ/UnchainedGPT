@@ -8,6 +8,109 @@ import { useParams, usePathname } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Toaster, toast } from "sonner";
+import Link from "next/link";
+
+// Demo mode constants
+const DAILY_MESSAGE_LIMIT = 30;
+const GUEST_TOKEN_KEY = "guest_token";
+const GUEST_MESSAGES_KEY = "guest_messages";
+const GUEST_MESSAGES_DATE_KEY = "guest_messages_date";
+
+// Generate a random guest token
+const generateGuestToken = () => {
+  return 'guest_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
+// Get today's date string
+const getTodayDateString = () => {
+  return new Date().toISOString().split('T')[0];
+};
+
+// Demo Welcome Modal Component
+const DemoWelcomeModal = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-[420px] mx-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="bg-[#0a0a0a] rounded-xl border border-white/[0.08] shadow-2xl">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4">
+            <h2 className="text-lg font-semibold text-white mb-1">Try UnchainedGPT</h2>
+            <p className="text-white/50 text-sm">Experience AI without limits</p>
+          </div>
+          
+          {/* Content */}
+          <div className="px-6 pb-5">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-md bg-white/[0.04] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <i className="ri-chat-3-line text-white/40 text-xs"></i>
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm">30 messages daily as guest</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-md bg-white/[0.04] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <i className="ri-infinity-line text-white/40 text-xs"></i>
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm">Unlimited with free account signup</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Actions */}
+          <div className="px-6 pb-6 flex flex-col gap-2.5">
+            <Link 
+              href="/register"
+              className="w-full py-2.5 px-4 bg-white text-black text-sm font-medium rounded-lg hover:bg-white/95 transition-all text-center"
+            >
+              Sign up for free
+            </Link>
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 px-4 text-white/60 text-sm font-medium rounded-lg hover:text-white/80 transition-colors"
+            >
+              Continue as guest
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Guest Mode Banner Component
+const GuestModeBanner = ({ messagesRemaining, totalMessages }) => {
+  return (
+    <div className="bg-white/[0.02] border-b border-white/[0.06]">
+      <div className="max-w-3xl mx-auto px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5">
+            <i className="ri-user-line text-white/30 text-sm"></i>
+            <span className="text-white/50 text-sm">Guest</span>
+          </div>
+          <div className="w-px h-3.5 bg-white/[0.08]"></div>
+          <div className="flex items-center gap-1">
+            <span className="text-white/70 text-sm font-medium">{messagesRemaining}</span>
+            <span className="text-white/40 text-sm">/ {totalMessages} left</span>
+          </div>
+        </div>
+        <Link 
+          href="/register"
+          className="text-white/60 hover:text-white/90 text-sm transition-colors"
+        >
+          Sign up free →
+        </Link>
+      </div>
+    </div>
+  );
+};
 
 const SidebarSkeleton = () => (
   <div className="animate-pulse flex flex-col h-full">
@@ -162,6 +265,7 @@ const Page = () => {
   const [userId, setUserId] = useState(null);
   const [chatData, setChatData] = useState([]);
   const [animatedTitle, setAnimatedTitle] = useState("");
+  const hasAnimatedTitleRef = useRef(false);
   const latestChatIdRef = useRef(null);
   const [userData, setUserData] = useState({});
   const [copyIndex, setCopyIndex] = useState(null);
@@ -171,6 +275,12 @@ const Page = () => {
   const [isWebActive, setIsWebActive] = useState(false);
   const abortControllerRef = useRef(null);
   const titlePollingRef = useRef(null);
+
+  // Guest mode states
+  const [isGuestMode, setIsGuestMode] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [guestMessagesRemaining, setGuestMessagesRemaining] = useState(DAILY_MESSAGE_LIMIT);
+  const [guestToken, setGuestToken] = useState(null);
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -327,6 +437,9 @@ const Page = () => {
     
     setChatId(null);
     setMessages([]);
+    setMessageMetadata({});
+    setTimeMetaData({});
+    latestMetadataRef.current = {};
     window.history.pushState({}, "", `/chat`);
 
     const newChatEntry = {
@@ -394,6 +507,15 @@ const Page = () => {
     }
     setIsGenerating(false);
     
+    // For guest mode with guest chats, just switch to the chat
+    if (isGuestMode && chatId.startsWith('guest_')) {
+      setChatId(chatId);
+      latestChatIdRef.current = chatId;
+      setMessages([]); // Guest chats don't persist messages between page loads
+      window.history.pushState({}, "", `/chat/${chatId}`);
+      return;
+    }
+    
     setIsMessagesLoading(true);
     try {
       const response = await fetch(
@@ -406,7 +528,7 @@ const Page = () => {
 
       if (data) {
         setMessages(data.messages || []);
-        console.log(data.messages);
+        console.log('Fetched messages:', data.messages);
         setChatId(chatId);
         latestChatIdRef.current = chatId;
 
@@ -415,6 +537,7 @@ const Page = () => {
 
         if (data.metaData) {
           setMessageMetadata(data.metaData);
+          latestMetadataRef.current = data.metaData;
         }
         if (data.timeData) {
           setTimeMetaData(data.timeData);
@@ -432,6 +555,50 @@ const Page = () => {
   useEffect(() => {
     latestMetadataRef.current = messageMetadata;
   }, [messageMetadata]);
+
+  // Initialize guest mode from localStorage
+  const initializeGuestMode = () => {
+    let token = localStorage.getItem(GUEST_TOKEN_KEY);
+    if (!token) {
+      token = generateGuestToken();
+      localStorage.setItem(GUEST_TOKEN_KEY, token);
+    }
+    setGuestToken(token);
+    
+    // Check and reset daily message count
+    const storedDate = localStorage.getItem(GUEST_MESSAGES_DATE_KEY);
+    const today = getTodayDateString();
+    
+    if (storedDate !== today) {
+      // New day, reset message count
+      localStorage.setItem(GUEST_MESSAGES_DATE_KEY, today);
+      localStorage.setItem(GUEST_MESSAGES_KEY, '0');
+      setGuestMessagesRemaining(DAILY_MESSAGE_LIMIT);
+    } else {
+      const usedMessages = parseInt(localStorage.getItem(GUEST_MESSAGES_KEY) || '0', 10);
+      setGuestMessagesRemaining(Math.max(0, DAILY_MESSAGE_LIMIT - usedMessages));
+    }
+    
+    // Initialize empty chat data for guest
+    setChatData([]);
+    
+    setIsGuestMode(true);
+    setIsChatsLoading(false);
+    setUserId(token);
+    setUserData({
+      avatar: null,
+      email: 'guest@demo',
+      username: 'Guest',
+    });
+  };
+
+  // Update guest message count
+  const decrementGuestMessages = () => {
+    const usedMessages = parseInt(localStorage.getItem(GUEST_MESSAGES_KEY) || '0', 10);
+    const newUsed = usedMessages + 1;
+    localStorage.setItem(GUEST_MESSAGES_KEY, newUsed.toString());
+    setGuestMessagesRemaining(Math.max(0, DAILY_MESSAGE_LIMIT - newUsed));
+  };
 
   useEffect(() => {
     const verifyTokenAndFetchChats = async () => {
@@ -456,19 +623,25 @@ const Page = () => {
               email: data.email,
               username: data.username,
             });
-
+            setIsGuestMode(false);
             await fetchAndCategorizeChats(data.userId, true);
           } else {
             Cookies.remove("token");
-            window.location.href = "/login";
+            // Instead of redirecting, enable guest mode
+            initializeGuestMode();
+            setShowWelcomeModal(true);
           }
         } catch (error) {
           console.error("Error verifying token:", error);
           Cookies.remove("token");
-          window.location.href = "/login";
+          // Instead of redirecting, enable guest mode
+          initializeGuestMode();
+          setShowWelcomeModal(true);
         }
       } else {
-        window.location.href = "/login";
+        // No token - enable guest mode
+        initializeGuestMode();
+        setShowWelcomeModal(true);
       }
     };
 
@@ -476,11 +649,14 @@ const Page = () => {
   }, []);
 
   useEffect(() => {
+    if (hasAnimatedTitleRef.current) return;
+
     if (chatData.length > 0 && chatData[0].chats.length > 0) {
       const firstChatTitle = chatData[0].chats[0].title;
       let index = 0;
 
       setAnimatedTitle(""); // Reset the animated title
+      hasAnimatedTitleRef.current = true;
 
       const animateTitle = () => {
         if (index < firstChatTitle.length) {
@@ -644,6 +820,18 @@ const Page = () => {
     selectedModel,
     selectedProvider
   ) => {
+    // Check guest mode message limit
+    if (isGuestMode && guestMessagesRemaining <= 0) {
+      toast.error("Daily limit reached. Sign up for free to continue.", { 
+        position: "top-right",
+        action: {
+          label: "Sign up",
+          onClick: () => window.location.href = "/register"
+        }
+      });
+      return;
+    }
+
     // Ensure we have a valid model - use llama as fallback
     let modelToUse = selectedModel;
     if (!modelToUse || !availableModels[modelToUse]) {
@@ -661,6 +849,11 @@ const Page = () => {
     if (!modelToUse || !availableModels[modelToUse]) {
       toast.error("No model available. Please try again.", { position: "top-right" });
       return;
+    }
+
+    // Decrement guest messages if in guest mode
+    if (isGuestMode) {
+      decrementGuestMessages();
     }
 
     setIsGenerating(true);
@@ -681,52 +874,93 @@ const Page = () => {
     });
 
     if (!currentChatId) {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/chat`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              prompt: message,
-              user_id: userId,
-            }),
-          }
-        );
-        const data = await response.json();
-        currentChatId = data.chat_id;
+      // For guest mode, create a local chat ID
+      if (isGuestMode) {
+        currentChatId = 'guest_' + Date.now();
         setChatId(currentChatId);
         latestChatIdRef.current = currentChatId;
-
-        fetchAndCategorizeChats(userId, false);
         
-        // Start polling for title update
-        pollForTitleUpdate(currentChatId);
-      } catch (error) {
-        console.error("Error creating new chat:", error);
-        setIsGenerating(false);
-        toast.error("Failed to create chat. Please try again.", { position: "top-right" });
-        return;
+        // Create new chat entry in local state
+        const newGuestChat = {
+          id: currentChatId,
+          title: message.slice(0, 30) + (message.length > 30 ? '...' : ''),
+          messages: []
+        };
+        
+        setChatData((prevChatData) => {
+          let updatedChats = [...prevChatData];
+          const recentCategoryIndex = updatedChats.findIndex(
+            (category) => category.category === "Recent"
+          );
+          
+          if (recentCategoryIndex !== -1) {
+            // Remove temp chat if exists
+            updatedChats[recentCategoryIndex].chats = updatedChats[recentCategoryIndex].chats.filter(
+              chat => chat.id !== 'temp'
+            );
+            // Only add if not already in the list
+            if (!updatedChats[recentCategoryIndex].chats.find(chat => chat.id === currentChatId)) {
+              updatedChats[recentCategoryIndex].chats.unshift(newGuestChat);
+            }
+          } else {
+            updatedChats.push({
+              category: "Recent",
+              chats: [newGuestChat],
+            });
+          }
+          
+          return updatedChats;
+        });
+      } else {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/chat`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                prompt: message,
+                user_id: userId,
+              }),
+            }
+          );
+          const data = await response.json();
+          currentChatId = data.chat_id;
+          setChatId(currentChatId);
+          latestChatIdRef.current = currentChatId;
+
+          fetchAndCategorizeChats(userId, false);
+          
+          // Start polling for title update
+          pollForTitleUpdate(currentChatId);
+        } catch (error) {
+          console.error("Error creating new chat:", error);
+          setIsGenerating(false);
+          toast.error("Failed to create chat. Please try again.", { position: "top-right" });
+          return;
+        }
       }
     }
 
     try {
-      // Save user message to database
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: {
-            index: (userMessageIndex !== null ? userMessageIndex + 1 : messages.length + 1),
-            role: "user",
-            content: message,
+      // Save user message to database (skip for guest mode)
+      if (!isGuestMode) {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        }),
-      });
+          body: JSON.stringify({
+            message: {
+              index: (userMessageIndex !== null ? userMessageIndex + 1 : messages.length + 1),
+              role: "user",
+              content: message,
+            },
+          }),
+        });
+      }
 
       // Send message to API and wait for complete response
       const response = await fetch(
@@ -756,9 +990,17 @@ const Page = () => {
       }
 
       const data = await response.json();
+      
+      // Log backend response for debugging
+      console.log('Backend response:', data);
 
       if (data.error) {
         throw new Error(data.error);
+      }
+      
+      // Validate that backend returned model info
+      if (!data.model) {
+        console.error('Warning: Backend did not return model information');
       }
 
       setIsGenerating(false);
@@ -766,117 +1008,146 @@ const Page = () => {
 
       // Handle image response
       if (data.type === "image") {
-        let assistantIndex = null; // zero-based index for assistant message
+        // Use backend model info if available, otherwise fallback to the model we sent the request with
+        const modelValue = data.model || availableModels[modelToUse]?.value || modelToUse;
+        const providerValue = data.provider || selectedProvider;
+        
         setMessages((prev) => {
-          assistantIndex = prev.length;
+          const newIndex = prev.length;
+          
+          // Update metadata refs synchronously inside the callback
+          const newMetadata = {
+            ...latestMetadataRef.current,
+            [newIndex]: { model: modelValue, provider: providerValue },
+          };
+          latestMetadataRef.current = newMetadata;
+          
+          // Also update time metadata
+          if (time) {
+            setTimeMetaData((prevTimeMeta) => ({
+              ...prevTimeMeta,
+              [newIndex]: time
+            }));
+          }
+          
+          // Schedule metadata state update
+          setTimeout(() => {
+            setMessageMetadata(newMetadata);
+          }, 0);
+          
           return [
             ...prev,
-            { role: "assistant", content: data.content, animate: true },
+            { 
+              role: "assistant", 
+              content: data.content, 
+              animate: true,
+              metadata: { model: modelValue, provider: providerValue }
+            },
           ];
         });
 
-        if (assistantIndex !== null) {
-          // Update metadata for the assistant message using the actual array index
-          setMessageMetadata((prevMetadata) => {
-            const newMetadata = {
-              ...prevMetadata,
-              [assistantIndex]: { 
-                model: data.model || selectedModel, 
-                provider: data.provider || selectedProvider 
-              },
-            };
-            latestMetadataRef.current = newMetadata;
-            return newMetadata;
-          });
-
-          setTimeMetaData((prevTimeMeta) => (
-            time ? { ...prevTimeMeta, [assistantIndex]: time } : prevTimeMeta
-          ));
-        }
-
         scrollToBottom();
 
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: {
-                index: assistantIndex !== null ? assistantIndex + 1 : messages.length + 1,
-                role: "assistant",
-                content: data.content,
-                model: data.model,
-                provider: data.provider,
-                timeItTook: time,
+        // Save to database (skip for guest mode)
+        if (!isGuestMode) {
+          // Calculate index based on current messages + 1 for user message
+          const saveIndex = messages.length + 2; // +1 for user msg, +1 for 1-indexed
+          await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
               },
-            }),
-          }
-        );
+              body: JSON.stringify({
+                message: {
+                  index: saveIndex,
+                  role: "assistant",
+                  content: data.content,
+                  model: data.model,
+                  provider: data.provider,
+                  timeItTook: time,
+                },
+              }),
+            }
+          );
 
-        // Refresh chat list
-        fetchAndCategorizeChats(userId, false);
+          // Refresh chat list
+          fetchAndCategorizeChats(userId, false);
+        }
         return;
       }
 
       // Handle text response
       if (data.type === "text" && data.content) {
         const fullResponse = data.content.trimEnd();
-        let assistantIndex = null; // zero-based index for assistant message
+        
+        // Use backend model info if available, otherwise fallback to the model we sent the request with
+        const modelValue = data.model || availableModels[modelToUse]?.value || modelToUse;
+        const providerValue = data.provider || selectedProvider;
 
         setMessages((prev) => {
-          assistantIndex = prev.length;
+          const newIndex = prev.length;
+          
+          // Update metadata refs synchronously inside the callback
+          const newMetadata = {
+            ...latestMetadataRef.current,
+            [newIndex]: { model: modelValue, provider: providerValue },
+          };
+          latestMetadataRef.current = newMetadata;
+          
+          // Also update time metadata
+          if (time) {
+            setTimeMetaData((prevTimeMeta) => ({
+              ...prevTimeMeta,
+              [newIndex]: time
+            }));
+          }
+          
+          // Schedule metadata state update
+          setTimeout(() => {
+            setMessageMetadata(newMetadata);
+          }, 0);
+          
           return [
             ...prev,
-            { role: "assistant", content: fullResponse, animate: true },
+            { 
+              role: "assistant", 
+              content: fullResponse, 
+              animate: true,
+              metadata: { model: modelValue, provider: providerValue }
+            },
           ];
         });
 
-        if (assistantIndex !== null) {
-          // Update metadata for the assistant message using the actual array index
-          setMessageMetadata((prevMetadata) => {
-            const newMetadata = {
-              ...prevMetadata,
-              [assistantIndex]: { 
-                model: data.model || selectedModel, 
-                provider: data.provider || selectedProvider 
-              },
-            };
-            latestMetadataRef.current = newMetadata;
-            return newMetadata;
-          });
-
-          setTimeMetaData((prevTimeMeta) => (
-            time ? { ...prevTimeMeta, [assistantIndex]: time } : prevTimeMeta
-          ));
-        }
-
         scrollToBottom();
 
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: {
-                index: assistantIndex !== null ? assistantIndex + 1 : messages.length + 1,
-                role: "assistant",
-                content: fullResponse,
-                model: data.model,
-                provider: data.provider,
-                timeItTook: time,
+        // Save to database (skip for guest mode)
+        if (!isGuestMode) {
+          const saveIndex = messages.length + 2; // +1 for user msg, +1 for 1-indexed
+          await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/message/${currentChatId}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
               },
-            }),
-          }
-        );
+              body: JSON.stringify({
+                message: {
+                  index: saveIndex,
+                  role: "assistant",
+                  content: fullResponse,
+                  model: data.model,
+                  provider: data.provider,
+                  timeItTook: time,
+                },
+              }),
+            }
+          );
 
-        // Refresh chat list to get updated title
-        fetchAndCategorizeChats(userId, false);
+          // Refresh chat list to get updated title
+          fetchAndCategorizeChats(userId, false);
+        }
       } else {
         throw new Error("Invalid response from server");
       }
@@ -1079,13 +1350,17 @@ const Page = () => {
 
   return (
     <div className="flex w-full h-screen bg-[#0f0f0f] relative overflow-hidden">
-      {/* Desktop Sidebar - Static, takes up space */}
+      {/* Demo Welcome Modal */}
+      <DemoWelcomeModal 
+        isOpen={showWelcomeModal} 
+        onClose={() => setShowWelcomeModal(false)} 
+      />
+      
       <aside className="hidden md:flex h-full w-[280px] flex-shrink-0 flex-col bg-[#171717] border-r border-white/[0.06]">
         {isChatsLoading ? (
           <SidebarSkeleton />
         ) : (
           <>
-            {/* Sidebar Header */}
             <div className="p-4 border-b border-white/[0.06]">
               <a href="/" className="text-yellow-500/60 text-lg font-bold tracking-tight mb-4 font-mono">UnchainedGPT</a>
               <button
@@ -1097,7 +1372,6 @@ const Page = () => {
               </button>
             </div>
 
-            {/* Chat History */}
             <div className="flex-1 overflow-y-auto py-3 px-3 scrollbar-thin">
               {chatData.map(({ category, chats }, categoryIndex) => (
                 <div key={category} className="mb-4">
@@ -1117,21 +1391,34 @@ const Page = () => {
               ))}
             </div>
 
-            {/* User Profile */}
             <div className="p-3 border-t border-white/[0.06]">
-              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
-                <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
-                  <p className="text-white/40 text-xs truncate">{userData.email}</p>
+              {isGuestMode ? (
+                <Link href="/register" className="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors cursor-pointer border border-white/[0.06]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.06] flex items-center justify-center">
+                      <i className="ri-user-add-line text-white/40 text-sm"></i>
+                    </div>
+                    <div>
+                      <p className="text-white/80 text-sm font-medium">Sign up free</p>
+                      <p className="text-white/40 text-xs">Unlimited messages</p>
+                    </div>
+                  </div>
+                  <i className="ri-arrow-right-s-line text-white/30"></i>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                  <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
+                    <p className="text-white/40 text-xs truncate">{userData.email}</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </>
         )}
       </aside>
 
-      {/* Mobile Sidebar - Floating overlay */}
       <aside className={`
         md:hidden fixed left-0 top-0 h-full w-[280px] flex-shrink-0 flex flex-col
         bg-[#171717] border-r border-white/[0.06] z-50
@@ -1142,7 +1429,6 @@ const Page = () => {
           <SidebarSkeleton />
         ) : (
           <>
-            {/* Sidebar Header */}
             <div className="p-4 border-b border-white/[0.06]">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-yellow-500/60 text-lg font-bold tracking-tight font-mono">UnchainedGPT</h1>
@@ -1159,7 +1445,6 @@ const Page = () => {
               </button>
             </div>
 
-            {/* Chat History */}
             <div className="flex-1 overflow-y-auto py-3 px-3 scrollbar-thin">
               {chatData.map(({ category, chats }, categoryIndex) => (
                 <div key={category} className="mb-4">
@@ -1179,21 +1464,43 @@ const Page = () => {
               ))}
             </div>
 
-            {/* User Profile */}
             <div className="p-3 border-t border-white/[0.06]">
-              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
-                <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
-                  <p className="text-white/40 text-xs truncate">{userData.email}</p>
+              {isGuestMode ? (
+                <Link href="/register" className="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors cursor-pointer border border-white/[0.06]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.06] flex items-center justify-center">
+                      <i className="ri-user-add-line text-white/40 text-sm"></i>
+                    </div>
+                    <div>
+                      <p className="text-white/80 text-sm font-medium">Sign up free</p>
+                      <p className="text-white/40 text-xs">Unlimited messages</p>
+                    </div>
+                  </div>
+                  <i className="ri-arrow-right-s-line text-white/30"></i>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                  <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
+                    <p className="text-white/40 text-xs truncate">{userData.email}</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </>
         )}
       </aside>
 
       <main className="flex-1 flex flex-col h-full relative">
+        {/* Guest Mode Banner */}
+        {isGuestMode && (
+          <GuestModeBanner 
+            messagesRemaining={guestMessagesRemaining} 
+            totalMessages={DAILY_MESSAGE_LIMIT} 
+          />
+        )}
+        
         <header className="md:hidden flex items-center justify-between px-4 h-14 border-b border-white/[0.06] bg-[#171717]">
           <button onClick={toggleSidebar} className="text-white/60 hover:text-white/80">
             <i className="ri-menu-line text-xl"></i>
@@ -1213,12 +1520,18 @@ const Page = () => {
             <MessagesSkeleton />
           ) : (
             <div className="max-w-3xl mx-auto px-4 py-8 md:py-12">
-              {/* Welcome Message */}
               {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                <h2 className="text-2xl font-medium text-white/90 mb-8">
+                <h2 className="text-2xl font-medium text-white/90 mb-3">
                   How can I help you today?
                 </h2>
+                
+                {isGuestMode && (
+                  <p className="text-white/40 text-sm mb-8">
+                    {guestMessagesRemaining} messages remaining · <Link href="/register" className="text-white/70 hover:text-white/90 transition-colors">Sign up free</Link>
+                  </p>
+                )}
+                {!isGuestMode && <div className="mb-5"></div>}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl px-4">
                   {suggestionCards.map((card, index) => (
@@ -1241,7 +1554,6 @@ const Page = () => {
               </div>
             )}
 
-            {/* Messages */}
             <div className="space-y-6">
               {messages.map((message, index) => (
                 <div
@@ -1265,25 +1577,23 @@ const Page = () => {
                         </div>
                       ) : (
                       <div className="px-5 pt-2.5 pb-4 rounded-3xl bg-[#1a1a1a]">
-                        {/* Message Header */}
                         <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/[0.04]">
                           <div className="flex items-center gap-2">
                             <i className="ri-cpu-line text-amber-400/50 text-sm"></i>
                             <span className="text-white/35 text-xs">
-                              {messageMetadata[index]?.model 
-                                ? getModelDisplay(messageMetadata[index].model) 
-                                : latestMetadataRef.current[index]?.model 
-                                  ? getModelDisplay(latestMetadataRef.current[index].model)
-                                  : selectedModel 
-                                    ? getModelDisplay(selectedModel)
+                              {message.metadata?.model 
+                                ? getModelDisplay(message.metadata.model)
+                                : messageMetadata[index]?.model 
+                                  ? getModelDisplay(messageMetadata[index].model) 
+                                  : latestMetadataRef.current[index]?.model 
+                                    ? getModelDisplay(latestMetadataRef.current[index].model)
                                     : "AI"}
                             </span>
                           </div>
-                          {timeMetaData[index] && (
-                            <span className="text-white/30 text-xs">{timeMetaData[index]}s</span>
+                          {(timeMetaData[index] || message.timeItTook) && (
+                            <span className="text-white/30 text-xs">{timeMetaData[index] || message.timeItTook}s</span>
                           )}
                         </div>
-                        {/* Message Content */}
                         <div className="text-white/55 opacity-90 leading-relaxed">
                           {message.content?.trim().length === 0 ? (
                             <span className="text-red-400/80 text-sm">Error: No response received.</span>
@@ -1324,7 +1634,6 @@ const Page = () => {
                         </div>
                       </div>
                       )}
-                      {/* Message Actions - Outside card */}
                       {!message.error && (
                       <div className="flex items-center gap-3 mt-2 px-2">
                         <button
@@ -1341,7 +1650,6 @@ const Page = () => {
                 </div>
               ))}
 
-              {/* Generating State */}
               {isGenerating && (
                 <div className="flex justify-start">
                   <div className="px-5 py-3 rounded-3xl bg-[#1a1a1a]">
@@ -1358,19 +1666,19 @@ const Page = () => {
           )}
         </div>
 
-        {/* Input Area */}
         <div className=" bg-[#0f0f0f00]">
           <div className="max-w-3xl mx-auto px-4 pb-3">
             <form onSubmit={handleInputSubmit}>
-              <div className="bg-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/[0.12] shadow-lg">
+              <div className={`bg-white/[0.02] backdrop-blur-sm rounded-2xl border shadow-lg ${isGuestMode && guestMessagesRemaining <= 0 ? 'border-red-500/20' : 'border-white/[0.12]'}`}>
                 <div className="flex items-end gap-2 px-5 py-4">
                   <textarea
                     ref={inputRef}
                     value={inputValue}
                     onChange={handleInputChange}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleInputSubmit(e); } }}
-                    placeholder="Message UnchainedGPT..."
-                    className="flex-1 bg-transparent text-white/90 placeholder-white/30 resize-none focus:outline-none overflow-y-auto scrollbar-thin"
+                    placeholder={isGuestMode && guestMessagesRemaining <= 0 ? "Daily limit reached. Sign up for free..." : "Message UnchainedGPT..."}
+                    disabled={isGuestMode && guestMessagesRemaining <= 0}
+                    className="flex-1 bg-transparent text-white/90 placeholder-white/30 resize-none focus:outline-none overflow-y-auto scrollbar-thin disabled:cursor-not-allowed"
                     style={{ height: '48px', lineHeight: '24px' }}
                   />
                   {isGenerating ? (
@@ -1384,15 +1692,30 @@ const Page = () => {
                   ) : (
                     <button
                       type="submit"
-                      disabled={!inputValue.trim()}
+                      disabled={!inputValue.trim() || (isGuestMode && guestMessagesRemaining <= 0)}
                       className="h-9 w-9 rounded-full bg-gradient-to-br from-amber-500/80 to-amber-600/80 hover:from-amber-400/80 hover:to-amber-500/80 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
                     >
                       <i className="ri-arrow-up-line text-black text-lg font-bold"></i>
                     </button>
                   )}
                 </div>
-                <div className="px-4 pb-3 border-t border-white/[0.06] pt-3">
+                <div className="px-4 pb-3 border-t border-white/[0.06] pt-3 flex items-center justify-between">
                   <ModelDropdown isOpen={modelDropdownOpen} onToggle={setModelDropdownOpen} />
+                  {isGuestMode ? (
+                    <div className="flex items-center gap-2 text-xs">
+                      {guestMessagesRemaining <= 0 ? (
+                        <Link href="/register" className="text-white/60 hover:text-white/90 font-medium transition-colors">
+                          Sign up free →
+                        </Link>
+                      ) : (
+                        <span className="text-white/40">{guestMessagesRemaining} left today</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-white/30">Unlimited Messages</span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="text-center mt-1.5">
@@ -1403,7 +1726,6 @@ const Page = () => {
         </div>
       </main>
 
-      {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div className="md:hidden fixed inset-0 bg-black/60 z-40" onClick={toggleSidebar} />
       )}
