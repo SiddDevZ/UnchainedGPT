@@ -1543,7 +1543,12 @@ const Page = () => {
                       }}
                       className="text-left p-4 rounded-xl border border-white/[0.06] bg-white/[0.005] hover:bg-white/[0.03] transition-colors ease-out group flex items-center gap-3"
                     >
-                      <i className={`${card.icon} text-${card.color} text-xl flex-shrink-0`}></i>
+                      <i className={`${card.icon} text-xl flex-shrink-0 ${
+                        card.color === 'blue-400' ? 'text-blue-400' :
+                        card.color === 'emerald-400' ? 'text-emerald-400' :
+                        card.color === 'amber-400' ? 'text-amber-400' :
+                        card.color === 'purple-400' ? 'text-purple-400' : ''
+                      }`}></i>
                       <div className="flex-1">
                         <div className="text-white/80 text-sm font-medium mb-1">{card.title}</div>
                         <div className="text-white/40 text-xs">{card.description}</div>
