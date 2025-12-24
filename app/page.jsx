@@ -15,7 +15,7 @@ const Particles = dynamic(() => import("../components/ui/particles"), {
   loading: () => <div></div>,
 });
 import Reviews from "../components/Reviews/Reviews";
-import Lottie from "lottie-react";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import light from "../public/car.json";
 import Questions from "../components/Questions/Questions";
 import Footer from "../components/Footer/Footer";
@@ -212,7 +212,12 @@ export function Home() {
                     every time.
                   </h4>
                   <div className="flex-grow flex justify-center items-center overflow-hidden mt-4">
-                    <Lottie animationData={light}></Lottie>
+                    <DotLottieReact 
+                      data={light} 
+                      loop 
+                      autoplay 
+                      style={{ width: '100%', height: '100%' }}
+                    />
                   </div>
                 </div>
                 <div className="md:w-[55%] xss:w-[100%]  min-w-[310px] px-8 py-8  h-[22rem] flex flex-col">
