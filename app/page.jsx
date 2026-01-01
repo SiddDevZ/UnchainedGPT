@@ -71,7 +71,7 @@ export function Home() {
   }, []);
 
   return (
-    <div className="" style={{ backgroundColor: bgColor }}>
+    <div className="overflow-hidden" style={{ backgroundColor: bgColor }}>
       <div className="dark flex mx-auto max-w-[88rem] h-max pb-[1rem] w-full flex-col overflow-hidden">
         <Navbar />
         <div className="md:w-[75%] sm:w-[85%] xs:w-[85%] xss:w-[95%] flex flex-col justify-center items-center mx-auto">

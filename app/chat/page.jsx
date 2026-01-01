@@ -10,23 +10,19 @@ import remarkGfm from "remark-gfm";
 import { Toaster, toast } from "sonner";
 import Link from "next/link";
 
-// Demo mode constants
 const DAILY_MESSAGE_LIMIT = 30;
 const GUEST_TOKEN_KEY = "guest_token";
 const GUEST_MESSAGES_KEY = "guest_messages";
 const GUEST_MESSAGES_DATE_KEY = "guest_messages_date";
 
-// Generate a random guest token
 const generateGuestToken = () => {
   return 'guest_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 };
 
-// Get today's date string
 const getTodayDateString = () => {
   return new Date().toISOString().split('T')[0];
 };
 
-// Demo Welcome Modal Component
 const DemoWelcomeModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
   
@@ -35,13 +31,11 @@ const DemoWelcomeModal = ({ isOpen, onClose }) => {
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-[420px] mx-4 animate-in fade-in zoom-in-95 duration-200">
         <div className="bg-[#0a0a0a] rounded-xl border border-white/[0.08] shadow-2xl">
-          {/* Header */}
           <div className="px-6 pt-6 pb-4">
             <h2 className="text-lg font-semibold text-white mb-1">Try UnchainedGPT</h2>
             <p className="text-white/50 text-sm">Experience AI without limits</p>
           </div>
-          
-          {/* Content */}
+
           <div className="px-6 pb-5">
             <div className="space-y-3">
               <div className="flex items-start gap-3">
@@ -63,8 +57,7 @@ const DemoWelcomeModal = ({ isOpen, onClose }) => {
               </div>
             </div>
           </div>
-          
-          {/* Actions */}
+
           <div className="px-6 pb-6 flex flex-col gap-2.5">
             <Link 
               href="/register"
@@ -1393,7 +1386,7 @@ const Page = () => {
 
             <div className="p-3 border-t border-white/[0.06]">
               {isGuestMode ? (
-                <Link href="/register" className="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors cursor-pointer border border-white/[0.06]">
+                <Link href="/register" className="flex items-center mb-2 justify-between p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors cursor-pointer border border-white/[0.06]">
                   <div className="flex items-center gap-2.5">
                     <div className="w-7 h-7 rounded-lg bg-white/[0.06] flex items-center justify-center">
                       <i className="ri-user-add-line text-white/40 text-sm"></i>
