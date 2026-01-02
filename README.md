@@ -3,7 +3,7 @@
 <div align="center">
   <img src="https://cdn.imgchest.com/files/ce5c532c0334.webp" alt="UnchainedGPT" width="600"/>
   
-  **The Ultimate Open-Source AI Platform — All Models, One Interface**
+  **The Ultimate Open-Source AI Platform, All Models, One Interface**
   
   [![Next.js](https://img.shields.io/badge/Next.js-15.1.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
   [![React](https://img.shields.io/badge/React-18.2.0-blue?style=for-the-badge&logo=react)](https://reactjs.org/)
