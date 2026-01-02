@@ -1,9 +1,9 @@
 # 🚀 UnchainedGPT
 
 <div align="center">
-  <img src="https://i.imgur.com/OmNuaFU.png" alt="UnchainedGPT" width="600"/>
+  <img src="https://cdn.imgchest.com/files/ce5c532c0334.webp" alt="UnchainedGPT" width="600"/>
   
-  **The Ultimate AI Platform - All Models in One Place**
+  **The Ultimate Open-Source AI Platform — All Models, One Interface**
   
   [![Next.js](https://img.shields.io/badge/Next.js-15.1.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
   [![React](https://img.shields.io/badge/React-18.2.0-blue?style=for-the-badge&logo=react)](https://reactjs.org/)
@@ -12,21 +12,39 @@
   [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)]()
 </div>
 
+---
+
 ## 📖 Overview
 
-UnchainedGPT is a cutting-edge, open-source AI platform that brings together the world's most powerful AI models in one seamless interface. From text generation to image creation, our platform offers **free access** to premium AI models including GPT-4o, Claude 3.5, MidJourney, Flux Pro, and many more.
+UnchainedGPT is a modern, open-source AI platform built to unify the **best open and openly-licensed AI models** under a single, seamless interface. the platform focuses on **freedom, transparency, and performance**.
 
-### ✨ Key Features
+It brings together state-of-the-art community and research-backed models such as **DeepSeek**, **LLaMA**, **Qwen**, **Phi**, **Gemma**, **Xiaomi**, and **GPT-OSS models**, making experimentation and production use effortless.
 
-- 🤖 **Multiple AI Models**: Access to GPT-4o, Claude 3.5, LLaMA 3.3, Deepseek r1, and more
-- 🎨 **Image Generation**: Create stunning visuals with Flux Pro, MidJourney, and DALL-E
-- 💬 **Real-time Chat**: Lightning-fast responses with WebSocket technology
-- 🔐 **Secure Authentication**: Google OAuth and Discord integration
-- 📱 **Responsive Design**: Perfect experience across all devices
-- 🌙 **Dark Mode**: Beautiful dark theme optimized for extended use
-- 💾 **Chat History**: Save and organize your conversations
-- 🚀 **Auto Provider Selection**: Intelligent fallback system for maximum uptime
-- 📊 **Performance Metrics**: Real-time response time tracking
+---
+
+## ✨ Key Features
+
+- 🤖 **Open-Source Model Hub**  
+  Access powerful open models like DeepSeek-R1, LLaMA 3.x, Qwen 2.5, Gemma, Phi-4, GPT-OSS, Xiaomi MiLM, and more
+
+- 🧠 **Advanced Reasoning & Coding**  
+  Strong math, logic, and programming capabilities using research-grade models
+
+- 💬 **Real-time Chat Engine**  
+  Ultra-low latency streaming powered by WebSockets
+
+- 🌙 **Dark-First Design**  
+  Carefully crafted dark theme for long sessions and reduced eye strain
+
+- 💾 **Persistent Chat History**  
+  Save, organize, and revisit conversations across models
+
+- 🚀 **Smart Provider Routing**  
+  Automatic fallback and load balancing across model providers for reliability
+
+---
+
+**UnchainedGPT** is built for developers, researchers, and builders who believe the future of AI should be **open, composable, and user-controlled**.
 
 ## 🚀 Quick Start
 
