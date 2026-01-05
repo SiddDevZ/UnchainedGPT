@@ -6,7 +6,7 @@ const Footer = () => {
       <div className="xss:mb-8 sm:mb-0 xss:text-center sm:text-left">
         <div className="flex xss:justify-center sm:justify-start items-center space-x-3 font-bold">
           <img
-            src="/unchained.png"
+            src="/unchained.webp"
             alt="Zenos AI Logo"
             className="sm:w-8 sm:h-8 xss:w-7 xss:h-7"
           />

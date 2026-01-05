@@ -11,7 +11,7 @@ const Navbar = () => {
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="relative">
               <img
-                src="/unchained.png"
+                src="/unchained.webp"
                 alt="UnchainedGPT Logo"
                 className="w-7 h-7"
               />
