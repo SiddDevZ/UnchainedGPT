@@ -1373,7 +1373,7 @@ const Page = () => {
                     <button
                       key={chat.id}
                       onClick={() => fetchSpecificChat(chat.id)}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-all
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-all ease-out
                         ${chatId === chat.id ? "bg-white/[0.08] text-white/90" : "text-white/50 hover:text-white/70 hover:bg-white/[0.04]"}
                       `}
                     >

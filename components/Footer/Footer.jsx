@@ -21,7 +21,7 @@ const Footer = () => {
             href="https://x.com/buildwithsid"
             className="font-medium underline decoration-[#a9a9a9] transition-all hover:decoration-white"
           >
-            Siddharth Meena
+            @buildwithsid
           </a>{" "}
           ❤️
         </p>

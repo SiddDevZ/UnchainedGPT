@@ -11,7 +11,6 @@
   [![MongoDB](https://img.shields.io/badge/MongoDB-Latest-green?style=for-the-badge&logo=mongodb)](https://mongodb.com/)
   [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)]()
 </div>
-
 ---
 
 ## 📖 Overview
