@@ -25,7 +25,7 @@ const Navbar = () => {
         
         <div className="flex items-center gap-4">
           <a 
-            href="https://bags.fm" 
+            href="https://bags.fm/14CZKL5PNfQwgw4ZQNoGGkgbztachLXUJr5CqGkKBAGS" 
             target="_blank" 
             rel="noopener noreferrer"
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold rounded-lg transition-all ease-out hover:brightness-110 active:scale-[0.98]"
