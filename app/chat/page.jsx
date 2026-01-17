@@ -9,6 +9,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Toaster, toast } from "sonner";
 import Link from "next/link";
+import UpgradeModal from "../../components/ui/UpgradeModal";
 
 const DAILY_MESSAGE_LIMIT = 30;
 const GUEST_TOKEN_KEY = "guest_token";
@@ -274,6 +275,73 @@ const Page = () => {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [guestMessagesRemaining, setGuestMessagesRemaining] = useState(DAILY_MESSAGE_LIMIT);
   const [guestToken, setGuestToken] = useState(null);
+
+  // Subscription states
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const [premiumModels, setPremiumModels] = useState({});
+
+  useEffect(() => {
+    const fetchSubscriptionStatus = async () => {
+      if (!userId || isGuestMode) return;
+      
+      try {
+        const token = Cookies.get("token");
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/subscription/status/${userId}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+          }
+        );
+        const data = await response.json();
+        if (data.plan) {
+          setSubscriptionData(data);
+          setIsPremium(data.plan === 'premium');
+        }
+      } catch (error) {
+        console.error("Error fetching subscription:", error);
+      }
+    };
+
+    fetchSubscriptionStatus();
+  }, [userId, isGuestMode]);
+
+  useEffect(() => {
+    const fetchPremiumModels = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/premiummessage/models`);
+        const data = await response.json();
+        
+        if (data.models) {
+          const formattedModels = {};
+          data.models.forEach(model => {
+            formattedModels[model.name] = {
+              display: model.name,
+              value: model.id,
+              premium: true,
+              providers: {
+                [model.provider]: { display: model.provider, value: model.provider }
+              }
+            };
+          });
+          setPremiumModels(formattedModels);
+        }
+      } catch (error) {
+        console.error("Error fetching premium models:", error);
+      }
+    };
+
+    fetchPremiumModels();
+  }, []);
+
+  const handleUpgradeSuccess = (newSubscription) => {
+    setSubscriptionData(newSubscription);
+    setIsPremium(true);
+  };
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -825,12 +893,12 @@ const Page = () => {
       return;
     }
 
-    // Ensure we have a valid model - use llama as fallback
     let modelToUse = selectedModel;
-    if (!modelToUse || !availableModels[modelToUse]) {
+    const allModels = { ...premiumModels, ...availableModels };
+    
+    if (!modelToUse || !allModels[modelToUse]) {
       modelToUse = 'meta-llama/llama-3.3-70b-instruct:free';
       if (!availableModels[modelToUse]) {
-        // Fall back to first available model
         modelToUse = Object.keys(availableModels)[0];
       }
       if (modelToUse) {
@@ -839,12 +907,25 @@ const Page = () => {
       }
     }
     
-    if (!modelToUse || !availableModels[modelToUse]) {
+    if (!modelToUse || !allModels[modelToUse]) {
       toast.error("No model available. Please try again.", { position: "top-right" });
       return;
     }
 
-    // Decrement guest messages if in guest mode
+    if (premiumModels[modelToUse] && !isPremium) {
+      toast.error("Premium subscription required for this model.", { position: "top-right" });
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    const remainingPremiumCredits = subscriptionData?.remainingCredits ?? 
+      ((subscriptionData?.premiumCredits || 0) - (subscriptionData?.premiumCreditsUsed || 0));
+    
+    if (premiumModels[modelToUse] && remainingPremiumCredits <= 0) {
+      toast.error("No premium credits remaining. Your credits will reset next month.", { position: "top-right" });
+      return;
+    }
+
     if (isGuestMode) {
       decrementGuestMessages();
     }
@@ -955,28 +1036,51 @@ const Page = () => {
         });
       }
 
-      // Send message to API and wait for complete response
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/streammessage`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            message,
-            model: availableModels[modelToUse].value,
-            provider: selectedProvider === "Auto" 
-              ? Object.entries(availableModels[modelToUse].providers)
-                  .slice(1)
-                  .map(([key, value]) => value.value)
-              : [availableModels[modelToUse].providers[selectedProvider].value],
-            chatId: currentChatId,
-            username: userData.username,
-          }),
-          signal: abortControllerRef.current?.signal,
-        }
-      );
+      const isPremiumModel = premiumModels[modelToUse] !== undefined;
+      let response;
+
+      if (isPremiumModel) {
+        const token = Cookies.get("token");
+        response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/premiummessage`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              message,
+              model: premiumModels[modelToUse].value,
+              chatId: currentChatId,
+              userId: userId,
+            }),
+            signal: abortControllerRef.current?.signal,
+          }
+        );
+      } else {
+        response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/streammessage`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message,
+              model: availableModels[modelToUse].value,
+              provider: selectedProvider === "Auto" 
+                ? Object.entries(availableModels[modelToUse].providers)
+                    .slice(1)
+                    .map(([key, value]) => value.value)
+                : [availableModels[modelToUse].providers[selectedProvider].value],
+              chatId: currentChatId,
+              username: userData.username,
+            }),
+            signal: abortControllerRef.current?.signal,
+          }
+        );
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -984,25 +1088,36 @@ const Page = () => {
 
       const data = await response.json();
       
-      // Log backend response for debugging
       console.log('Backend response:', data);
 
       if (data.error) {
         throw new Error(data.error);
       }
       
-      // Validate that backend returned model info
       if (!data.model) {
         console.error('Warning: Backend did not return model information');
+      }
+
+      if (isPremiumModel && data.premiumCreditsRemaining !== undefined) {
+        setSubscriptionData(prev => ({
+          ...prev,
+          remainingCredits: data.premiumCreditsRemaining,
+          premiumCreditsUsed: (prev?.premiumCredits || 0) - data.premiumCreditsRemaining
+        }));
       }
 
       setIsGenerating(false);
       const time = stopTimer();
 
-      // Handle image response
+      const getModelValue = () => {
+        if (isPremiumModel) {
+          return data.model || premiumModels[modelToUse]?.value || modelToUse;
+        }
+        return data.model || availableModels[modelToUse]?.value || modelToUse;
+      };
+
       if (data.type === "image") {
-        // Use backend model info if available, otherwise fallback to the model we sent the request with
-        const modelValue = data.model || availableModels[modelToUse]?.value || modelToUse;
+        const modelValue = getModelValue();
         const providerValue = data.provider || selectedProvider;
         
         setMessages((prev) => {
@@ -1071,12 +1186,10 @@ const Page = () => {
         return;
       }
 
-      // Handle text response
       if (data.type === "text" && data.content) {
         const fullResponse = data.content.trimEnd();
         
-        // Use backend model info if available, otherwise fallback to the model we sent the request with
-        const modelValue = data.model || availableModels[modelToUse]?.value || modelToUse;
+        const modelValue = getModelValue();
         const providerValue = data.provider || selectedProvider;
 
         setMessages((prev) => {
@@ -1200,7 +1313,9 @@ const Page = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [isClosing, setIsClosing] = useState(false);
 
-    const filteredModels = Object.entries(availableModels).filter(([key]) =>
+    const allModels = { ...premiumModels, ...availableModels };
+    
+    const filteredModels = Object.entries(allModels).filter(([key]) =>
       key.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -1224,6 +1339,12 @@ const Page = () => {
     }, [isOpen]);
 
     const handleModelSelect = (key) => {
+      const modelData = allModels[key];
+      if (modelData?.premium && !isPremium) {
+        setShowUpgradeModal(true);
+        handleClose();
+        return;
+      }
       setSelectedModel(key);
       localStorage.setItem('selectedModel', key);
       handleClose();
@@ -1260,18 +1381,23 @@ const Page = () => {
             <div className="max-h-[280px] overflow-y-auto scrollbar-thin">
               {filteredModels.length > 0 ? (
                 <div className="p-2 space-y-[1px">
-                  {filteredModels.map(([key]) => (
+                  {filteredModels.map(([key, modelData]) => (
                     <button
                       key={key}
                       type="button"
                       onClick={() => handleModelSelect(key)}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-all ease-out truncate ${
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-all ease-out flex items-center justify-between gap-2 ${
                         selectedModel === key 
                           ? "text-amber-400/60 bg-amber-500/5 font-medium" 
                           : "text-white/60 hover:text-white/90 hover:bg-white/[0.05]"
                       }`}
                     >
-                      {key}
+                      <span className="truncate">{key}</span>
+                      {modelData?.premium && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${isPremium ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                          {isPremium ? 'PRO' : '🔒'}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -1286,7 +1412,7 @@ const Page = () => {
         )}
       </div>
     );
-  }), [availableModels, selectedModel]);
+  }), [availableModels, premiumModels, selectedModel, isPremium, subscriptionData]);
 
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -1399,13 +1525,38 @@ const Page = () => {
                   <i className="ri-arrow-right-s-line text-white/30"></i>
                 </Link>
               ) : (
-                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
-                  <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
-                    <p className="text-white/40 text-xs truncate">{userData.email}</p>
+                <>
+                  {/* Upgrade Button - Desktop */}
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="w-full flex items-center justify-between p-2.5 mb-2 rounded-lg transition-all cursor-pointer border bg-gradient-to-r from-orange-500/5 to-amber-500/5 border-orange-500/10 hover:border-orange-500/20"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-orange-500/10">
+                        <i className={`ri-vip-crown-2-${isPremium ? "fill" : "line"} text-orange-300 text-sm`}></i>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-orange-300">
+                          {isPremium ? "Premium" : "Upgrade"}
+                        </p>
+                        <p className="text-white/40 text-xs">
+                          {isPremium 
+                            ? `${subscriptionData?.remainingCredits || 0} credits left` 
+                            : "Unlock top models"}
+                        </p>
+                      </div>
+                    </div>
+                    <i className="ri-arrow-right-s-line text-orange-300/50"></i>
+                  </button>
+                  
+                  <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                    <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
+                      <p className="text-white/40 text-xs truncate">{userData.email}</p>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           </>
@@ -1472,13 +1623,38 @@ const Page = () => {
                   <i className="ri-arrow-right-s-line text-white/30"></i>
                 </Link>
               ) : (
-                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
-                  <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
-                    <p className="text-white/40 text-xs truncate">{userData.email}</p>
+                <>
+                  {/* Upgrade Button - Mobile */}
+                  <button
+                    onClick={() => { setShowUpgradeModal(true); toggleSidebar(); }}
+                    className="w-full flex items-center justify-between p-2.5 mb-2 rounded-lg transition-all cursor-pointer border bg-gradient-to-r from-orange-500/5 to-amber-500/5 border-orange-500/10 hover:border-orange-500/20"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-orange-500/10">
+                        <i className={`ri-vip-crown-2-${isPremium ? "fill" : "line"} text-orange-300 text-sm`}></i>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-orange-300">
+                          {isPremium ? "Premium" : "Upgrade"}
+                        </p>
+                        <p className="text-white/40 text-xs">
+                          {isPremium 
+                            ? `${subscriptionData?.remainingCredits || 0} credits left` 
+                            : "Unlock top models"}
+                        </p>
+                      </div>
+                    </div>
+                    <i className="ri-arrow-right-s-line text-orange-300/50"></i>
+                  </button>
+                  
+                  <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                    <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
+                      <p className="text-white/40 text-xs truncate">{userData.email}</p>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           </>
@@ -1727,6 +1903,14 @@ const Page = () => {
       {isSidebarOpen && (
         <div className="md:hidden fixed inset-0 bg-black/60 z-40" onClick={toggleSidebar} />
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        userId={userId}
+        onUpgradeSuccess={handleUpgradeSuccess}
+      />
 
       <Toaster
         position="top-center"

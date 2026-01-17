@@ -18,6 +18,8 @@ import fetchChatRoute from "./routes/fetchChat.js";
 import fetchModelsRoute from "./routes/fetchModels.js";
 import v1Route from "./routes/v1.js";
 import streamMessageRoute from "./routes/streamMessage.js";
+import subscriptionRoute from "./routes/subscription.js";
+import premiumMessageRoute from "./routes/premiumMessage.js";
 
 const app = new Hono();
 
@@ -49,7 +51,9 @@ app.route("/api/streammessage", streamMessageRoute);
 app.route("/api/fetchchats", fetchChatsRoute);
 app.route("/api/fetchchat", fetchChatRoute);
 app.route("/api/fetchmodels", fetchModelsRoute);
-app.route("/v1", v1Route); // OpenAI-compatible API endpoint
+app.route("/api/subscription", subscriptionRoute);
+app.route("/api/premiummessage", premiumMessageRoute);
+app.route("/v1", v1Route);
 
 const server = serve({
   fetch: app.fetch,
