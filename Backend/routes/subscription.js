@@ -18,7 +18,7 @@ import {
 const router = new Hono()
 
 const PREMIUM_CREDITS = 300
-const SUBSCRIPTION_USD_PRICE = 0.01
+const SUBSCRIPTION_USD_PRICE = 20
 
 const verifyUserAuth = async (c, userId) => {
   const authHeader = c.req.header('Authorization')
