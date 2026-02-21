@@ -372,14 +372,14 @@ const Page = () => {
               // Use saved model if it exists in the list
               setSelectedModel(savedModel);
             } else {
-              // No saved model, find first model that starts with "Meta"
-              const metaModel = Object.keys(formattedModels).find(key => 
-                key.toLowerCase().startsWith('meta')
+              // No saved model, find "Google: Gemma 3 27B"
+              const gemmaModel = Object.keys(formattedModels).find(key => 
+                key.toLowerCase().includes('gemma') && key.includes('27')
               );
               
-              if (metaModel) {
-                setSelectedModel(metaModel);
-                localStorage.setItem('selectedModel', metaModel);
+              if (gemmaModel) {
+                setSelectedModel(gemmaModel);
+                localStorage.setItem('selectedModel', gemmaModel);
               } else {
                 // Fall back to first model
                 const firstModel = Object.keys(formattedModels)[0];
@@ -1313,11 +1313,18 @@ const Page = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [isClosing, setIsClosing] = useState(false);
 
-    const allModels = { ...premiumModels, ...availableModels };
+    // const allModels = { ...premiumModels, ...availableModels };
+    const allModels = { ...availableModels };
     
     const filteredModels = Object.entries(allModels).filter(([key]) =>
       key.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    ).sort(([a], [b]) => {
+      const aIsRouter = a.toLowerCase().includes('free models router');
+      const bIsRouter = b.toLowerCase().includes('free models router');
+      if (aIsRouter && !bIsRouter) return 1;
+      if (!aIsRouter && bIsRouter) return -1;
+      return 0;
+    });
 
     const handleClose = () => {
       setIsClosing(true);
@@ -1377,6 +1384,10 @@ const Page = () => {
                   autoFocus
                 />
               </div>
+            </div>
+            <div className="px-3 pt-2.5 pb-1 flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-white/20">Free Models</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400/60 font-medium border border-amber-500/10">✦ Paid models coming soon</span>
             </div>
             <div className="max-h-[280px] overflow-y-auto scrollbar-thin">
               {filteredModels.length > 0 ? (
@@ -1526,7 +1537,7 @@ const Page = () => {
                 </Link>
               ) : (
                 <>
-                  {/* Upgrade Button - Desktop */}
+                  {/* Upgrade Button - Desktop - commented out
                   <button
                     onClick={() => setShowUpgradeModal(true)}
                     className="w-full flex items-center justify-between p-2.5 mb-2 rounded-lg transition-all cursor-pointer border bg-gradient-to-r from-orange-500/5 to-amber-500/5 border-orange-500/10 hover:border-orange-500/20"
@@ -1548,6 +1559,7 @@ const Page = () => {
                     </div>
                     <i className="ri-arrow-right-s-line text-orange-300/50"></i>
                   </button>
+                  */}
                   
                   <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
                     <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
@@ -1624,7 +1636,7 @@ const Page = () => {
                 </Link>
               ) : (
                 <>
-                  {/* Upgrade Button - Mobile */}
+                  {/* Upgrade Button - Mobile - commented out
                   <button
                     onClick={() => { setShowUpgradeModal(true); toggleSidebar(); }}
                     className="w-full flex items-center justify-between p-2.5 mb-2 rounded-lg transition-all cursor-pointer border bg-gradient-to-r from-orange-500/5 to-amber-500/5 border-orange-500/10 hover:border-orange-500/20"
@@ -1646,6 +1658,7 @@ const Page = () => {
                     </div>
                     <i className="ri-arrow-right-s-line text-orange-300/50"></i>
                   </button>
+                  */}
                   
                   <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
                     <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
@@ -1746,7 +1759,7 @@ const Page = () => {
                         <div className="px-5 py-3 rounded-3xl bg-[#1a1a1a]">
                           <div className="flex items-center gap-2">
                             <i className="ri-error-warning-line text-red-400/60 text-sm"></i>
-                            <span className="text-white/40 text-sm">Failed to generate</span>
+                            <span className="text-white/40 text-sm">Failed to generate, try another model</span>
                           </div>
                         </div>
                       ) : (
