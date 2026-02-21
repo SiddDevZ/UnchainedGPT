@@ -1562,12 +1562,19 @@ const Page = () => {
                   */}
                   
                   <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
-                    {userData.avatar
-                      ? <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
-                      : <div className="w-8 h-8 rounded-full ring-2 ring-white/[0.08] bg-white/[0.05] flex items-center justify-center flex-shrink-0">
-                          <i className="ri-user-3-line text-white/40 text-sm"></i>
-                        </div>
-                    }
+                    <div className="relative w-8 h-8 flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full ring-2 ring-white/[0.08] bg-white/[0.05] flex items-center justify-center">
+                        <i className="ri-user-3-line text-white/40 text-sm"></i>
+                      </div>
+                      {userData.avatar && (
+                        <img
+                          src={userData.avatar}
+                          alt=""
+                          className="w-8 h-8 rounded-full ring-2 ring-white/[0.1] absolute inset-0"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
                       <p className="text-white/40 text-xs truncate">{userData.email}</p>
@@ -1666,12 +1673,19 @@ const Page = () => {
                   */}
                   
                   <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
-                    {userData.avatar
-                      ? <img src={userData.avatar} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/[0.1]" />
-                      : <div className="w-8 h-8 rounded-full ring-2 ring-white/[0.08] bg-white/[0.05] flex items-center justify-center flex-shrink-0">
-                          <i className="ri-user-3-line text-white/40 text-sm"></i>
-                        </div>
-                    }
+                    <div className="relative w-8 h-8 flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full ring-2 ring-white/[0.08] bg-white/[0.05] flex items-center justify-center">
+                        <i className="ri-user-3-line text-white/40 text-sm"></i>
+                      </div>
+                      {userData.avatar && (
+                        <img
+                          src={userData.avatar}
+                          alt=""
+                          className="w-8 h-8 rounded-full ring-2 ring-white/[0.1] absolute inset-0"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white/70 text-sm font-medium truncate">{userData.username}</p>
                       <p className="text-white/40 text-xs truncate">{userData.email}</p>
